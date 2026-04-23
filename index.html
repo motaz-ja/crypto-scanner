@@ -1455,7 +1455,26 @@
       }
     });
 
-    fetchBinanceData();
+    async function fetchBinanceData() {
+  try {
+    els.statusText.textContent = "جاري تحميل بيانات Binance...";
+
+    // 🔥 نستخدم API مباشر (بدون functions حالياً)
+    const res = await fetch("https://api.binance.com/api/v3/ticker/24hr");
+    const data = await res.json();
+
+    state.allCoins = data;
+    state.technicalMap = new Map();
+
+    els.statusText.textContent = "تم تحميل البيانات";
+
+    renderAll();
+
+  } catch (err) {
+    console.error(err);
+    els.statusText.textContent = "فشل تحميل البيانات";
+  }
+}
   </script>
 </body>
 </html>
