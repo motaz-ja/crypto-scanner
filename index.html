@@ -1455,38 +1455,52 @@
       }
     });
 
-    async function fetchBinanceData() {
+   async function fetchBinanceData() {
   try {
     els.statusText.textContent = "جاري تحميل بيانات Binance...";
 
     const res = await fetch("https://api.binance.com/api/v3/ticker/24hr");
     const data = await res.json();
 
-    // ✅ فلترة فقط USDT + حذف العملات الغلط
-    const filtered = data.filter(c =>
-      c.symbol.endsWith("USDT") &&
-      !c.symbol.includes("UP") &&
-      !c.symbol.includes("DOWN") &&
-      !c.symbol.includes("BULL") &&
-      !c.symbol.includes("BEAR")
-    );
+    const filtered = data
+      .filter((c) =>
+        c.symbol.endsWith("USDT") &&
+        !c.symbol.includes("UP") &&
+        !c.symbol.includes("DOWN") &&
+        !c.symbol.includes("BULL") &&
+        !c.symbol.includes("BEAR")
+      )
+      .map((item) => {
+        const baseAsset = item.symbol.replace(/USDT$/, "");
+        return {
+          symbol: item.symbol,
+          baseAsset,
+          lastPrice: Number(item.lastPrice),
+          priceChangePercent: Number(item.priceChangePercent),
+          quoteVolume: Number(item.quoteVolume),
+          count: Number(item.count),
+          sectors: getCoinSectors(baseAsset)
+        };
+      });
 
-    state.allCoins = filtered;
-
-    // (اختياري) ترتيب حسب السيولة
-    state.allCoins.sort((a, b) =>
-      parseFloat(b.quoteVolume) - parseFloat(a.quoteVolume)
-    );
-
+    state.allCoins = filtered.sort((a, b) => b.quoteVolume - a.quoteVolume);
     state.technicalMap = new Map();
 
-    els.statusText.textContent = "تم تحميل البيانات";
+    els.trackedCoins.textContent = state.allCoins.length;
+    els.visibleCoins.textContent = Math.min(state.overviewLimit, state.allCoins.length);
+    els.activeSectors.textContent = getSectorStats().length;
 
+    els.statusText.textContent = "تم تحميل البيانات";
     renderAll();
 
   } catch (err) {
     console.error(err);
     els.statusText.textContent = "فشل تحميل البيانات";
+    els.overviewTableBody.innerHTML = `
+      <tr>
+        <td colspan="7" class="loading-cell">فشل تحميل الجدول.</td>
+      </tr>
+    `;
   }
 }
   </script>
