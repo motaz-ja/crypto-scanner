@@ -1459,11 +1459,25 @@
   try {
     els.statusText.textContent = "جاري تحميل بيانات Binance...";
 
-    // 🔥 نستخدم API مباشر (بدون functions حالياً)
     const res = await fetch("https://api.binance.com/api/v3/ticker/24hr");
     const data = await res.json();
 
-    state.allCoins = data;
+    // ✅ فلترة فقط USDT + حذف العملات الغلط
+    const filtered = data.filter(c =>
+      c.symbol.endsWith("USDT") &&
+      !c.symbol.includes("UP") &&
+      !c.symbol.includes("DOWN") &&
+      !c.symbol.includes("BULL") &&
+      !c.symbol.includes("BEAR")
+    );
+
+    state.allCoins = filtered;
+
+    // (اختياري) ترتيب حسب السيولة
+    state.allCoins.sort((a, b) =>
+      parseFloat(b.quoteVolume) - parseFloat(a.quoteVolume)
+    );
+
     state.technicalMap = new Map();
 
     els.statusText.textContent = "تم تحميل البيانات";
