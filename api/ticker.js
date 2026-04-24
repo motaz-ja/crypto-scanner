@@ -1,36 +1,10 @@
-let cache = null;
-let lastFetch = 0;
-
-exports.handler = async function () {
-  const now = Date.now();
-
-  if (cache && (now - lastFetch < 15000)) {
-    return {
-      statusCode: 200,
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(cache)
-    };
-  }
-
+module.exports = async (req, res) => {
   try {
-    const res = await fetch("https://api.binance.com/api/v3/ticker/24hr");
-    if (!res.ok) throw new Error("Ticker fetch failed");
-
-    const data = await res.json();
-
-    cache = data;
-    lastFetch = now;
-
-    return {
-      statusCode: 200,
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(data)
-    };
-  } catch (error) {
-    return {
-      statusCode: 500,
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ error: "failed ticker" })
-    };
+    const r = await fetch("https://api.binance.com/api/v3/ticker/24hr");
+    const data = await r.json();
+    res.setHeader("Cache-Control", "s-maxage=15, stale-while-revalidate=30");
+    return res.status(200).json(data);
+  } catch (e) {
+    return res.status(500).json({ error: "ticker failed" });
   }
 };
