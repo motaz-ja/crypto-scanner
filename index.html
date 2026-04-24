@@ -847,7 +847,7 @@
         <article class="opportunity-card clean-card">
           <div class="card-top">
             <div class="coin-head">
-              <div class="coin-rsi-chip">RSI ${coin.tech.dailyRSI ? coin.tech.dailyRSI.toFixed(0) : "-"}</div>
+              <div class="coinRSI: ${coin.tech.rsi?.toFixed(1) || "-"}-chip">RSI ${coin.tech.dailyRSI ? coin.tech.dailyRSI.toFixed(0) : "-"}</div>
               <div class="coin-head-main">
                 <h3>${coin.baseAsset}</h3>
                 <p>${coin.symbol}</p>
@@ -937,8 +937,17 @@
 
       els.opportunityGrid.innerHTML = coins.slice(0, 8).map((coin, index) => buildOpportunityCard(coin, index)).join("");
 
-      const breakoutCoins = coins.filter(c => c.tech.signalType === "اختراق" || c.tech.signalType === "فرصة قوية");
-      const reversalCoins = coins.filter(c => c.tech.signalType === "ارتداد");
+     const breakoutCoins = coins.filter(c =>
+  c.tech.rsi > 55 &&
+  c.tech.priceChangePercent > 2 &&
+  c.tech.liquidityScore > 50
+);
+
+const reversalCoins = coins.filter(c =>
+  c.tech.rsi < 35 &&
+  c.tech.priceChangePercent < 0 &&
+  c.tech.liquidityScore > 40
+);
 
       els.breakoutGrid.innerHTML = breakoutCoins.length
         ? breakoutCoins.slice(0, 8).map((coin, index) => buildOpportunityCard(coin, index)).join("")
