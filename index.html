@@ -484,14 +484,37 @@ function buildAnalysisCard(c, i){
         <ul>${reasonsFor(c).map(x=>`<li>${x}</li>`).join("")}</ul>
       </div>
     </article>
+            <div class="clean-section">
+          <span class="clean-title">دعم الحيتان</span>
+          <div class="whale-support-line">
+            ${
+              state.whales.some(w => w.symbol === c.baseAsset && w.flowType === "bullish")
+                ? "دعم تجميع واضح من الحيتان"
+                : state.whales.some(w => w.symbol === c.baseAsset && w.flowType === "bearish")
+                  ? "تحذير: ضغط بيع محتمل من الحيتان"
+                  : "لا يوجد دعم واضح من الحيتان"
+            }
+          </div>
+        </div>
   `;
 }
 
 function renderOpportunities(){
   const arr = state.enriched;
-  const breakout = arr.filter(c => c.tech?.breakout || (c.change > 4 && c.tech?.liquidityScore > 35)).slice(0,8);
-  const reversal = arr.filter(c => c.tech?.reversal || (c.tech?.rsi && c.tech.rsi < 45 && c.volume > 3000000)).slice(0,8);
-  const signals = arr.filter(c => c.tech?.signalScore > 30).slice(0,10);
+  const breakout = arr
+  .filter(c => c.change > 3 && c.volume > 5000000 && c.trades > 30000)
+  .slice(0, 8);
+
+const reversal = arr
+  .filter(c =>
+    (c.change < 2 && c.volume > 3000000) ||
+    (c.tech?.rsi && c.tech.rsi < 48)
+  )
+  .slice(0, 8);
+
+const signals = arr
+  .filter(c => c.volume > 3000000 && c.trades > 20000)
+  .slice(0, 10);
 
   els.opportunityGrid.innerHTML = arr.slice(0,8).map(buildCard).join("") || `<div class="loading-box">لا توجد فرص حالياً</div>`;
   els.breakoutGrid.innerHTML = breakout.map(buildCard).join("") || `<div class="loading-box">لا توجد اختراقات حالياً</div>`;
