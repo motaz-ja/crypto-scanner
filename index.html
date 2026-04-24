@@ -208,11 +208,16 @@ async function fetchTicker(){
 
   state.coins = data
     .filter(c =>
-      c.symbol.endsWith("USDT") &&
       !c.symbol.includes("UP") &&
-      !c.symbol.includes("DOWN") &&
-      !c.symbol.includes("BULL") &&
-      !c.symbol.includes("BEAR")
+!c.symbol.includes("DOWN") &&
+!c.symbol.includes("BULL") &&
+!c.symbol.includes("BEAR") &&
+!c.symbol.includes("USD1") &&
+!c.symbol.includes("USDC") &&
+!c.symbol.includes("FDUSD") &&
+!c.symbol.includes("TUSD") &&
+!c.symbol.includes("TRY") &&
+!c.symbol.includes("EUR")
     )
     .map(c => {
       const baseAsset = c.symbol.replace("USDT","");
@@ -275,27 +280,67 @@ function renderOverview(){
 }
 
 function renderSectors(){
-  const map = {};
+  const sectors = {};
+
   state.coins.forEach(c => {
-    if (!map[c.sector]) map[c.sector] = { count:0, volume:0, best:null };
-    map[c.sector].count++;
-    map[c.sector].volume += c.volume;
-    if (!map[c.sector].best || c.change > map[c.sector].best.change) map[c.sector].best = c;
+    const sectorList = c.sectors && c.sectors.length ? c.sectors : [c.sector || "General"];
+
+    sectorList.forEach(sector => {
+      if (!sectors[sector]) {
+        sectors[sector] = {
+          name: sector,
+          coins: [],
+          totalVolume: 0
+        };
+      }
+
+      sectors[sector].coins.push(c);
+      sectors[sector].totalVolume += c.volume;
+    });
   });
 
-  els.sectorsGrid.innerHTML = Object.entries(map)
-    .sort((a,b)=>b[1].volume-a[1].volume)
-    .map(([name,s])=>`
-      <article class="clean-card">
-        <h3>${name}</h3>
-        <div class="mini-grid">
-          <div><span>عدد العملات</span><strong>${s.count}</strong></div>
-          <div><span>السيولة</span><strong>${fmtMoney(s.volume)}</strong></div>
-          <div><span>الأقوى</span><strong>${s.best?.baseAsset || "-"}</strong></div>
-          <div><span>24h</span><strong class="${s.best?.change>=0?"green":"red"}">${s.best ? s.best.change.toFixed(2)+"%" : "-"}</strong></div>
-        </div>
-      </article>
-    `).join("");
+  els.sectorsGrid.innerHTML = Object.values(sectors)
+    .sort((a, b) => b.totalVolume - a.totalVolume)
+    .map(sector => {
+      const topCoins = sector.coins
+        .sort((a, b) => b.volume - a.volume)
+        .slice(0, 5);
+
+      const bestChange = [...sector.coins]
+        .sort((a, b) => b.change - a.change)[0];
+
+      return `
+        <article class="sector-box clean-card">
+          <div class="sector-head">
+            <h3>${sector.name}</h3>
+            <span>${sector.coins.length} عملة</span>
+          </div>
+
+          <div class="sector-stats-row">
+            <div>
+              <span>سيولة القطاع</span>
+              <strong>${fmtMoney(sector.totalVolume)}</strong>
+            </div>
+            <div>
+              <span>الأقوى 24h</span>
+              <strong class="${bestChange.change >= 0 ? "green" : "red"}">${bestChange.baseAsset} ${bestChange.change.toFixed(2)}%</strong>
+            </div>
+          </div>
+
+          <div class="sector-coins-list">
+            ${topCoins.map((coin, index) => `
+              <div class="sector-coin-row">
+                <span>${index + 1}</span>
+                <strong>${coin.baseAsset}</strong>
+                <small>${fmtMoney(coin.volume)}</small>
+                <em class="${coin.change >= 0 ? "green" : "red"}">${coin.change.toFixed(2)}%</em>
+              </div>
+            `).join("")}
+          </div>
+        </article>
+      `;
+    })
+    .join("");
 }
 
 async function fetchKlines(symbol){
@@ -431,16 +476,27 @@ function buildCard(c, i){
 
 function tradeSetup(c){
   const p = c.price;
-  const low = c.tech?.recentLow && isFinite(c.tech.recentLow) ? c.tech.recentLow : p*0.94;
-  const high = c.tech?.recentHigh && isFinite(c.tech.recentHigh) ? c.tech.recentHigh : p*1.08;
 
-  const entry1 = p;
-  const entry2 = Math.max(low * 1.02, p * 0.965);
-  const stop = Math.min(low * 0.985, entry2 * 0.97);
+  const isBreakout = c.tech?.breakout || c.change > 5;
+  const atrLike = Math.max(p * 0.025, p * 0.018);
+
+  let entry1 = p;
+  let entry2 = isBreakout ? p * 0.985 : p * 0.975;
+
+  let stop = isBreakout ? p * 0.955 : p * 0.945;
+
   const risk = entry1 - stop;
 
-  const tp1 = Math.max(high, entry1 + risk * 1.5);
-  const tp2 = Math.max(tp1 * 1.06, entry1 + risk * 2.5);
+  let tp1 = entry1 + risk * 1.45;
+  let tp2 = entry1 + risk * 2.35;
+
+  if (c.change > 12) {
+    entry1 = p * 0.985;
+    entry2 = p * 0.955;
+    stop = p * 0.91;
+    tp1 = p * 1.08;
+    tp2 = p * 1.16;
+  }
 
   let status = "شغالة";
   if (p <= stop) status = "ضرب الستوب";
