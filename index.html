@@ -1210,71 +1210,151 @@
       return { whaleBias: "neutral", whaleText: "لا يوجد دعم واضح من الحيتان" };
     }
 
-    function renderAnalysis() {
-      if (!opportunitiesLoaded) {
-        els.analysisGrid.innerHTML = `<div class="loading-box">افتح تبويب Opportunities لتحميل التحليلات.</div>`;
-        return;
-      }
+   function buildSmartTradeSetup(coin) {
+  const price = Number(coin.lastPrice || coin.price || 0);
+  const change = Number(coin.priceChangePercent || 0);
+  const volume = Number(coin.quoteVolume || 0);
+  const trades = Number(coin.count || 0);
+  const rsi = coin.tech?.rsi || coin.rsi || "-";
 
-      const coins = enrichOpportunityCoins();
+  const isStrong = volume > 20000000 && trades > 80000;
+  const isFast = change > 3;
+  const isDip = change < -3;
+  const isReversal = change > 1 && change < 6;
+  const isBreakout = change > 6 && volume > 10000000;
 
-      if (!coins.length) {
-        els.analysisGrid.innerHTML = `<div class="loading-box">لا توجد توصيات حالية.</div>`;
-        return;
-      }
+  const entry1 = price;
+  const entry2 = price * 0.975;
+  const stop = price * 0.94;
+  const tp1 = price * 1.065;
+  const tp2 = price * 1.13;
 
-      const setups = coins.slice(0, 8).map((coin) => {
-        const whale = getWhaleSupportForCoin(coin.baseAsset);
-        let score = coin.tech.signalScore + (coin.tech.liquidityScore * 0.12);
-        if (whale.whaleBias === "bullish") score += 10;
-        if (whale.whaleBias === "bearish") score -= 8;
+  let status = "مراقبة";
+  if (price >= tp2) status = "حقق الهدف الثاني";
+  else if (price >= tp1) status = "حقق الهدف الأول";
+  else if (price <= stop) status = "ضرب الستوب";
+  else if (price <= entry1 && price >= entry2) status = "داخل منطقة الدخول";
+  else status = "شغالة";
 
-        return { ...coin, whale, finalScore: Math.round(clamp(score, 1, 99)) };
-      }).sort((a, b) => b.finalScore - a.finalScore);
+  const reasons = [];
 
-      els.analysisGrid.innerHTML = setups.map((coin, index) => `
-        <article class="analysis-card clean-card">
-          <div class="card-top">
-            <div class="coin-head">
-              <div class="coin-rsi-chip">RSI ${coin.tech.dailyRSI ? coin.tech.dailyRSI.toFixed(0) : "-"}</div>
-              <div class="coin-head-main">
-                <h3>${coin.baseAsset}</h3>
-                <p>${coin.symbol}</p>
-              </div>
-              <div class="coin-rank-chip">${index + 1}</div>
-            </div>
+  if (isStrong) reasons.push("سيولة قوية تدعم الحركة");
+  if (trades > 100000) reasons.push("نشاط صفقات مرتفع");
+  if (isFast) reasons.push("زخم صاعد واضح");
+  if (isDip) reasons.push("ارتداد محتمل بعد هبوط قوي");
+  if (isReversal) reasons.push("بداية انعكاس سعري");
+  if (isBreakout) reasons.push("اختراق مع حجم تداول جيد");
+  if (volume > 50000000) reasons.push("اهتمام عالي من السوق");
+  if (rsi !== "-" && Number(rsi) < 35) reasons.push("RSI منخفض ويدعم الارتداد");
+  if (reasons.length < 2) reasons.push("فرصة مضاربية تحت المراقبة");
+
+  return {
+    entry1,
+    entry2,
+    stop,
+    tp1,
+    tp2,
+    status,
+    rsi,
+    reasons: reasons.slice(0, 4)
+  };
+}
+
+function formatTradePrice(value) {
+  if (!Number.isFinite(value) || value <= 0) return "-";
+  if (value < 0.001) return "$" + value.toFixed(8);
+  if (value < 0.1) return "$" + value.toFixed(5);
+  if (value < 1) return "$" + value.toFixed(4);
+  if (value < 100) return "$" + value.toFixed(3);
+  return "$" + value.toFixed(2);
+}
+
+function renderAnalysis() {
+  if (!opportunitiesLoaded) {
+    els.analysisGrid.innerHTML = `<div class="loading-box">افتح تبويب Opportunities لتحميل التحليلات.</div>`;
+    return;
+  }
+
+  const coins = enrichOpportunityCoins()
+    .filter((coin) => Number(coin.lastPrice || coin.price || 0) > 0)
+    .slice(0, 8)
+    .map((coin) => {
+      const setup = buildSmartTradeSetup(coin);
+      const score =
+        Number(coin.tech?.signalScore || 0) +
+        Number(coin.tech?.liquidityScore || 0) * 0.12 +
+        Number(coin.priceChangePercent || 0);
+
+      return { ...coin, setup, finalScore: Math.round(clamp(score, 1, 99)) };
+    })
+    .sort((a, b) => b.finalScore - a.finalScore);
+
+  if (!coins.length) {
+    els.analysisGrid.innerHTML = `<div class="loading-box">لا توجد توصيات حالياً.</div>`;
+    return;
+  }
+
+  els.analysisGrid.innerHTML = coins.map((coin, index) => {
+    const setup = coin.setup;
+
+    return `
+      <article class="analysis-card clean-card">
+        <div class="card-top">
+          <div class="rank-badge">${index + 1}</div>
+          <div class="coin-head">
+            <h3>${coin.baseAsset}</h3>
+            <span>${coin.symbol}</span>
           </div>
+          <div class="rsi-badge">RSI ${setup.rsi}</div>
+        </div>
 
-          <div class="analysis-status-row">
-            <span class="signal-pill">${coin.tech.signalType}</span>
-            <span class="trade-status ${getStatusClass(coin.tradePlan.status)}">${coin.tradePlan.status}</span>
+        <div class="analysis-status-row">
+          <span class="signal-pill">${coin.signal || "فرصة جيدة"}</span>
+          <span class="signal-pill">${setup.status}</span>
+        </div>
+
+        <div class="analysis-levels">
+          <div class="metric-box">
+            <span>الدخول 1</span>
+            <strong>${formatTradePrice(setup.entry1)}</strong>
           </div>
-
-          <div class="clean-metrics">
-            <div class="metric-box"><span>الدخول 1</span><strong>${formatPrice(coin.tradePlan.entry1)}</strong></div>
-            <div class="metric-box"><span>الدخول 2</span><strong>${formatPrice(coin.tradePlan.entry2)}</strong></div>
-            <div class="metric-box"><span>الستوب</span><strong>${formatPrice(coin.tradePlan.stop)}</strong></div>
-            <div class="metric-box"><span>الهدف 1</span><strong>${formatPrice(coin.tradePlan.tp1)}</strong></div>
-            <div class="metric-box"><span>الهدف 2</span><strong>${formatPrice(coin.tradePlan.tp2)}</strong></div>
-            <div class="metric-box"><span>السعر الحالي</span><strong>${formatPrice(coin.lastPrice)}</strong></div>
+          <div class="metric-box">
+            <span>الدخول 2</span>
+            <strong>${formatTradePrice(setup.entry2)}</strong>
           </div>
-
-          <div class="clean-body">
-            <div class="clean-section">
-              <span class="clean-title">الأسباب</span>
-              <ul class="why-list">
-                ${coin.tech.reasons.length ? coin.tech.reasons.map(reason => `<li>${reason}</li>`).join("") : "<li>تحت المراقبة</li>"}
-              </ul>
-            </div>
-
-            <div class="clean-section">
-              <span class="clean-title">دعم الحيتان</span>
-              <div class="whale-support-line whale-${coin.whale.whaleBias}">${coin.whale.whaleText}</div>
-            </div>
+          <div class="metric-box">
+            <span>الستوب</span>
+            <strong>${formatTradePrice(setup.stop)}</strong>
           </div>
-        </article>
-      `).join("");
-    }
+          <div class="metric-box">
+            <span>الهدف 1</span>
+            <strong>${formatTradePrice(setup.tp1)}</strong>
+          </div>
+          <div class="metric-box">
+            <span>الهدف 2</span>
+            <strong>${formatTradePrice(setup.tp2)}</strong>
+          </div>
+          <div class="metric-box">
+            <span>السعر الحالي</span>
+            <strong>${formatTradePrice(setup.entry1)}</strong>
+          </div>
+        </div>
+
+        <div class="clean-section">
+          <span class="clean-title">الأسباب</span>
+          <ul>
+            ${setup.reasons.map((reason) => `<li>${reason}</li>`).join("")}
+          </ul>
+        </div>
+
+        <div class="clean-section">
+          <span class="clean-title">دعم الحيتان</span>
+          <div class="whale-support-line whale-neutral">لا يوجد دعم واضح من الحيتان</div>
+        </div>
+      </article>
+    `;
+  }).join("");
+}
 
     function switchMainTab(tabName) {
       els.mainTabs.forEach((tab) => {
