@@ -483,8 +483,7 @@ function buildAnalysisCard(c, i){
         <span class="clean-title">الأسباب</span>
         <ul>${reasonsFor(c).map(x=>`<li>${x}</li>`).join("")}</ul>
       </div>
-    </article>
-            <div class="clean-section">
+      <div class="clean-section">
           <span class="clean-title">دعم الحيتان</span>
           <div class="whale-support-line">
             ${
@@ -496,6 +495,8 @@ function buildAnalysisCard(c, i){
             }
           </div>
         </div>
+    </article>
+            
   `;
 }
 
@@ -516,8 +517,12 @@ const signals = arr
   .filter(c => c.volume > 3000000 && c.trades > 20000)
   .slice(0, 10);
 
-  els.opportunityGrid.innerHTML = arr.slice(0,8).map(buildCard).join("") || `<div class="loading-box">لا توجد فرص حالياً</div>`;
-  els.breakoutGrid.innerHTML = breakout.map(buildCard).join("") || `<div class="loading-box">لا توجد اختراقات حالياً</div>`;
+ const overview = arr
+  .filter(c => !breakout.includes(c))
+  .slice(0, 8);
+
+els.opportunityGrid.innerHTML = overview.map(buildCard).join("") || `<div class="loading-box">لا توجد فرص حالياً</div>`;
+els.breakoutGrid.innerHTML = breakout.map(buildCard).join("") || `<div class="loading-box">لا توجد اختراقات حالياً</div>`;
   els.reversalGrid.innerHTML = reversal.map(buildCard).join("") || `<div class="loading-box">لا توجد انعكاسات حالياً</div>`;
   els.signalsGrid.innerHTML = signals.map(buildCard).join("") || `<div class="loading-box">لا توجد إشارات حالياً</div>`;
   els.analysisGrid.innerHTML = arr.slice(0,8).map(buildAnalysisCard).join("") || `<div class="loading-box">لا توجد توصيات حالياً</div>`;
