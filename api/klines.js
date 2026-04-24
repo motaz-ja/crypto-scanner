@@ -1,56 +1,18 @@
-const cacheMap = new Map();
-
-exports.handler = async function (event) {
+module.exports = async (req, res) => {
   try {
-    const { symbol, interval = "4h", limit = "60" } = event.queryStringParameters || {};
+    const { symbol, interval = "4h", limit = "60" } = req.query;
 
     if (!symbol) {
-      return {
-        statusCode: 400,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ error: "symbol required" })
-      };
+      return res.status(400).json({ error: "symbol required" });
     }
 
-    const safeLimit = Math.min(Math.max(Number(limit) || 60, 10), 100);
-    const key = `${symbol}_${interval}_${safeLimit}`;
-    const now = Date.now();
-    const cached = cacheMap.get(key);
+    const url = `https://api.binance.com/api/v3/klines?symbol=${symbol}&interval=${interval}&limit=${limit}`;
+    const r = await fetch(url);
+    const data = await r.json();
 
-    if (cached && (now - cached.time < 30000)) {
-      return {
-        statusCode: 200,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(cached.data)
-      };
-    }
-
-    const url = `https://api.binance.com/api/v3/klines?symbol=${encodeURIComponent(symbol)}&interval=${encodeURIComponent(interval)}&limit=${safeLimit}`;
-    const res = await fetch(url);
-    if (!res.ok) throw new Error("Klines fetch failed");
-
-    const data = await res.json();
-    const parsed = data.map(k => ({
-      openTime: Number(k[0]),
-      open: Number(k[1]),
-      high: Number(k[2]),
-      low: Number(k[3]),
-      close: Number(k[4]),
-      volume: Number(k[5])
-    }));
-
-    cacheMap.set(key, { time: now, data: parsed });
-
-    return {
-      statusCode: 200,
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(parsed)
-    };
-  } catch (error) {
-    return {
-      statusCode: 500,
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ error: "failed klines" })
-    };
+    res.setHeader("Cache-Control", "s-maxage=60, stale-while-revalidate=120");
+    return res.status(200).json(data);
+  } catch (e) {
+    return res.status(500).json({ error: "klines failed" });
   }
 };
