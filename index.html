@@ -80,38 +80,38 @@
     </section>
 
     <section id="opportunitiesTab" class="tab-panel">
-      <div class="section-title">
-        <h2>محرك الفرص</h2>
-        <p>Breakout + Reversal + Signals + Analysis</p>
-      </div>
+     <div class="section-title">
+  <h2>محرك الفرص</h2>
+  <p id="subtabDescription">أفضل الفرص العامة في السوق</p>
+</div>
 
-      <nav class="tabs sub-tabs">
-        <button class="sub-tab active" data-subtab="overview">Overview</button>
-        <button class="sub-tab" data-subtab="breakout">Breakout</button>
-        <button class="sub-tab" data-subtab="reversal">Reversal</button>
-        <button class="sub-tab" data-subtab="signals">Signals</button>
-        <button class="sub-tab" data-subtab="analysis">Analysis</button>
-      </nav>
+<nav class="tabs sub-tabs">
+  <button class="sub-tab active" data-subtab="overview">Overview</button>
+  <button class="sub-tab" data-subtab="breakout">Breakout</button>
+  <button class="sub-tab" data-subtab="reversal">Reversal</button>
+  <button class="sub-tab" data-subtab="signals">Signals</button>
+  <button class="sub-tab" data-subtab="analysis">Analysis</button>
+</nav>
 
-      <div id="overviewSub" class="sub-panel active">
-        <div id="opportunityGrid" class="cards"></div>
-      </div>
+<div id="overviewSub" class="sub-panel active">
+  <div id="opportunityGrid" class="cards"></div>
+</div>
 
-      <div id="breakoutSub" class="sub-panel">
-        <div id="breakoutGrid" class="cards"></div>
-      </div>
+<div id="breakoutSub" class="sub-panel">
+  <div id="breakoutGrid" class="cards"></div>
+</div>
 
-      <div id="reversalSub" class="sub-panel">
-        <div id="reversalGrid" class="cards"></div>
-      </div>
+<div id="reversalSub" class="sub-panel">
+  <div id="reversalGrid" class="cards"></div>
+</div>
 
-      <div id="signalsSub" class="sub-panel">
-        <div id="signalsGrid" class="cards"></div>
-      </div>
+<div id="signalsSub" class="sub-panel">
+  <div id="signalsGrid" class="cards"></div>
+</div>
 
-      <div id="analysisSub" class="sub-panel">
-        <div id="analysisGrid" class="cards"></div>
-      </div>
+<div id="analysisSub" class="sub-panel">
+  <div id="analysisGrid" class="cards"></div>
+</div>
     </section>
 
     <section id="whaleTab" class="tab-panel">
@@ -572,6 +572,15 @@ document.querySelectorAll(".sub-tab").forEach(btn=>{
     document.querySelectorAll(".sub-panel").forEach(p=>p.classList.remove("active"));
     btn.classList.add("active");
     document.getElementById(btn.dataset.subtab+"Sub").classList.add("active");
+    const desc = {
+  overview: "أفضل الفرص العامة في السوق",
+  breakout: "اختراقات قوية + زخم + سيولة",
+  reversal: "انعكاسات محتملة + RSI منخفض + دعم",
+  signals: "إشارات سريعة حسب النشاط والزخم",
+  analysis: "دخول + اهداف + ستوب + دعم الحيتان"
+};
+
+document.getElementById("subtabDescription").textContent = desc[btn.dataset.subtab];
   });
 });
 
