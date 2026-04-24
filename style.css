@@ -446,3 +446,27 @@ td small {
     font-size: 24px;
   }
 }
+.sectors-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 15px;
+}
+
+.sector-card {
+  padding: 12px;
+  border-radius: 12px;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.05);
+}
+
+.sector-card h3 {
+  font-size: 16px;
+  margin-bottom: 10px;
+}
+
+.sector-mini {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+  opacity: 0.8;
+}
