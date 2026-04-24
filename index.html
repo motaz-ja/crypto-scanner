@@ -7,1544 +7,573 @@
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <div class="background-glow glow-1"></div>
-  <div class="background-glow glow-2"></div>
+  <div class="bg glow1"></div>
+  <div class="bg glow2"></div>
 
-  <div class="container">
+  <main class="container">
     <header class="hero">
-      <div class="logo-row">
-        <span class="logo">🔥</span>
-        <div>
-          <h1>Crypto Scanner Pro</h1>
-          <p class="subtitle">محرك صيد فرص العملات البديلة من Binance Spot</p>
-        </div>
-      </div>
+      <h1>Crypto Scanner Pro 🔥</h1>
+      <p>محرك صيد فرص العملات البديلة من Binance Spot</p>
 
-      <div class="hero-stats">
-        <div class="stat-card">
-          <span class="stat-label">العملات المتتبعة</span>
-          <span class="stat-value" id="trackedCoins">0</span>
-        </div>
-        <div class="stat-card">
-          <span class="stat-label">العملات الظاهرة</span>
-          <span class="stat-value" id="visibleCoins">0</span>
-        </div>
-        <div class="stat-card">
-          <span class="stat-label">القطاعات النشطة</span>
-          <span class="stat-value" id="activeSectors">0</span>
-        </div>
+      <div class="stats">
+        <div><span>العملات المتتبعة</span><strong id="trackedCoins">0</strong></div>
+        <div><span>العملات الظاهرة</span><strong id="visibleCoins">0</strong></div>
+        <div><span>القطاعات النشطة</span><strong id="activeSectors">0</strong></div>
       </div>
     </header>
 
-    <section class="controls-card">
-      <div class="top-controls">
-        <div class="search-wrapper">
-          <input type="text" id="searchInput" placeholder="ابحث عن عملة أو قطاع..." />
-        </div>
+    <section class="panel controls">
+      <input id="searchInput" placeholder="ابحث عن عملة أو قطاع..." />
+      <button id="refreshBtn">تحديث</button>
+      <button data-limit="30" class="limit-btn active">Top 30</button>
+      <button data-limit="50" class="limit-btn">Top 50</button>
+      <button data-limit="100" class="limit-btn">Top 100</button>
 
-        <div class="top-buttons">
-          <button class="mini-btn active" id="top30Btn">Top 30</button>
-          <button class="mini-btn" id="top50Btn">Top 50</button>
-          <button class="mini-btn" id="top100Btn">Top 100</button>
-          <button class="mini-btn" id="refreshBtn">تحديث</button>
-        </div>
-      </div>
+      <button data-sort="liquidity" class="sort-btn active">أعلى سيولة</button>
+      <button data-sort="change">أعلى صعود 24h</button>
+      <button data-sort="trades">أعلى صفقات</button>
+      <button data-sort="price">أعلى سعر</button>
+      <button data-sort="az">A → Z</button>
 
-      <div class="sort-row">
-        <button class="sort-btn active" data-sort="liquidity_desc">أعلى سيولة</button>
-        <button class="sort-btn" data-sort="change_desc">أعلى صعود 24h</button>
-        <button class="sort-btn" data-sort="trades_desc">أعلى صفقات</button>
-        <button class="sort-btn" data-sort="price_desc">أعلى سعر</button>
-        <button class="sort-btn" data-sort="name_asc">A → Z</button>
-      </div>
-
-      <div class="info-line" id="statusText">جاري تحميل بيانات Binance...</div>
+      <p id="statusText">جاري تحميل بيانات Binance...</p>
     </section>
 
-    <section class="tabs-section">
-      <div class="main-tabs">
-        <button class="main-tab active" data-tab="home">Home</button>
-        <button class="main-tab" data-tab="sectors">Sectors</button>
-        <button class="main-tab" data-tab="opportunities">Opportunities</button>
-        <button class="main-tab" data-tab="whale">Whale Flow</button>
-      </div>
-    </section>
+    <nav class="tabs main-tabs">
+      <button class="main-tab active" data-tab="home">Home</button>
+      <button class="main-tab" data-tab="sectors">Sectors</button>
+      <button class="main-tab" data-tab="opportunities">Opportunities</button>
+      <button class="main-tab" data-tab="whale">Whale Flow</button>
+    </nav>
 
-    <!-- HOME -->
     <section id="homeTab" class="tab-panel active">
-      <section class="overview-section">
-        <div class="section-head">
-          <h2>نظرة عامة على السوق</h2>
-          <p>جميع عملات Binance USDT Spot في مكان واحد</p>
-        </div>
+      <div class="section-title">
+        <h2>نظرة عامة على السوق</h2>
+        <p>جميع عملات Binance USDT Spot في مكان واحد</p>
+      </div>
 
-        <div class="mobile-swipe-hint">اسحب الجدول لليسار لرؤية باقي الأعمدة ←</div>
-
-        <div class="table-card">
-          <div class="table-responsive">
-            <table>
-              <thead>
-                <tr>
-                  <th>#</th>
-                  <th>العملة</th>
-                  <th>السعر</th>
-                  <th>24h</th>
-                  <th>السيولة</th>
-                  <th>الصفقات</th>
-                  <th>القطاعات</th>
-                </tr>
-              </thead>
-              <tbody id="overviewTableBody">
-                <tr><td colspan="7" class="loading-cell">جاري التحميل...</td></tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </section>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>العملة</th>
+              <th>السعر</th>
+              <th>24h</th>
+              <th>السيولة</th>
+              <th>الصفقات</th>
+              <th>القطاع</th>
+            </tr>
+          </thead>
+          <tbody id="overviewBody">
+            <tr><td colspan="7">جاري التحميل...</td></tr>
+          </tbody>
+        </table>
+      </div>
     </section>
 
-    <!-- SECTORS -->
     <section id="sectorsTab" class="tab-panel">
-      <section class="navigator-section">
-        <div class="section-head">
-          <h2>اختيار القطاع</h2>
-          <p>اختر قطاعًا واحدًا أو اعرض الكل</p>
-        </div>
-
-        <div class="sector-nav-card">
-          <div class="sector-nav-header">
-            <span class="sector-nav-title">الوصول السريع</span>
-            <button class="sector-nav-btn active" data-sector="all">عرض الكل</button>
-          </div>
-          <div class="sector-nav-grid" id="sectorNavRow">
-            <div class="loading-chip">جاري تحميل القطاعات...</div>
-          </div>
-        </div>
-      </section>
-
-      <section class="sectors-section">
-        <div class="section-head">
-          <h2>القطاعات</h2>
-          <p>أفضل العملات داخل كل قطاع + قراءة لقوة القطاع</p>
-        </div>
-        <div id="sectorsGrid" class="sectors-grid">
-          <div class="loading-box">جاري تحميل القطاعات...</div>
-        </div>
-      </section>
+      <div class="section-title">
+        <h2>القطاعات</h2>
+        <p>تصنيف العملات حسب القطاع والسيولة</p>
+      </div>
+      <div id="sectorsGrid" class="grid"></div>
     </section>
 
-    <!-- OPPORTUNITIES -->
     <section id="opportunitiesTab" class="tab-panel">
-      <section class="opportunities-hero">
-        <div class="section-head">
-          <h2>محرك الفرص</h2>
-          <p>التقاط العملات ذات السيولة والزخم والإشارات الأقوى</p>
-        </div>
+      <div class="section-title">
+        <h2>محرك الفرص</h2>
+        <p>Breakout + Reversal + Signals + Analysis</p>
+      </div>
 
-        <div class="opportunity-top-stats" id="opportunityTopStats">
-          <div class="loading-box">افتح تبويب Opportunities لتحميل الفرص.</div>
-        </div>
-      </section>
+      <nav class="tabs sub-tabs">
+        <button class="sub-tab active" data-subtab="overview">Overview</button>
+        <button class="sub-tab" data-subtab="breakout">Breakout</button>
+        <button class="sub-tab" data-subtab="reversal">Reversal</button>
+        <button class="sub-tab" data-subtab="signals">Signals</button>
+        <button class="sub-tab" data-subtab="analysis">Analysis</button>
+      </nav>
 
-      <section class="subtabs-section">
-        <div class="subtabs">
-          <button class="subtab active" data-subtab="opp-overview">Overview</button>
-          <button class="subtab" data-subtab="opp-breakout">Breakout</button>
-          <button class="subtab" data-subtab="opp-reversal">Reversal</button>
-          <button class="subtab" data-subtab="opp-signals">Signals</button>
-          <button class="subtab" data-subtab="opp-analysis">Analysis</button>
-        </div>
-      </section>
+      <div id="overviewSub" class="sub-panel active">
+        <div id="opportunityGrid" class="cards"></div>
+      </div>
 
-      <section id="opp-overview" class="subtab-panel active">
-        <div class="opportunity-grid" id="opportunityGrid">
-          <div class="loading-box">افتح تبويب Opportunities لتحميل الفرص.</div>
-        </div>
-      </section>
+      <div id="breakoutSub" class="sub-panel">
+        <div id="breakoutGrid" class="cards"></div>
+      </div>
 
-      <section id="opp-breakout" class="subtab-panel">
-        <div class="section-head">
-          <h2>اختراقات قوية</h2>
-          <p>اختراق + سيولة + نشاط + زخم</p>
-        </div>
-        <div class="opportunity-grid" id="breakoutGrid">
-          <div class="loading-box">افتح تبويب Opportunities لتحميل الاختراقات.</div>
-        </div>
-      </section>
+      <div id="reversalSub" class="sub-panel">
+        <div id="reversalGrid" class="cards"></div>
+      </div>
 
-      <section id="opp-reversal" class="subtab-panel">
-        <div class="section-head">
-          <h2>بدايات انعكاس</h2>
-          <p>RSI منخفض + دعم + عودة سيولة أو نشاط</p>
-        </div>
-        <div class="opportunity-grid" id="reversalGrid">
-          <div class="loading-box">افتح تبويب Opportunities لتحميل الانعكاسات.</div>
-        </div>
-      </section>
+      <div id="signalsSub" class="sub-panel">
+        <div id="signalsGrid" class="cards"></div>
+      </div>
 
-      <section id="opp-signals" class="subtab-panel">
-        <div class="section-head">
-          <h2>Signals</h2>
-          <p>الأسباب والانحياز بشكل واضح</p>
-        </div>
-        <div class="signals-feed" id="signalsFeed">
-          <div class="loading-box">افتح تبويب Opportunities لتحميل الإشارات.</div>
-        </div>
-      </section>
-
-      <section id="opp-analysis" class="subtab-panel">
-        <div class="section-head">
-          <h2>Analysis</h2>
-          <p>دخول + ستوب + هدفين + حالة الصفقة</p>
-        </div>
-        <div class="analysis-grid" id="analysisGrid">
-          <div class="loading-box">افتح تبويب Opportunities لتحميل التحليلات.</div>
-        </div>
-      </section>
+      <div id="analysisSub" class="sub-panel">
+        <div id="analysisGrid" class="cards"></div>
+      </div>
     </section>
 
-    <!-- WHALE -->
     <section id="whaleTab" class="tab-panel">
-      <section class="whale-hero">
-        <div class="section-head">
-          <h2>Whale Flow</h2>
-          <p>متابعة تحويلات الحيتان على نفس العملة</p>
-        </div>
-
-        <div class="whale-top-stats" id="whaleTopStats">
-          <div class="loading-box">افتح تبويب Whale Flow لتحميل البيانات.</div>
-        </div>
-      </section>
-
-      <section class="whale-controls-card">
-        <div class="whale-controls-grid">
-          <div class="search-wrapper">
-            <input type="text" id="whaleSearchInput" placeholder="ابحث عن عملة مثل GALA أو SAND..." />
-          </div>
-
-          <div class="whale-select-wrap">
-            <select id="whaleDirectionFilter" class="whale-select">
-              <option value="all">كل التدفقات</option>
-              <option value="bullish">تجميع صاعد</option>
-              <option value="bearish">ضغط بيع</option>
-            </select>
-          </div>
-
-          <div class="whale-select-wrap">
-            <select id="whaleMinAmountFilter" class="whale-select">
-              <option value="0">كل الأحجام</option>
-              <option value="100000">أكبر من 100K</option>
-              <option value="500000">أكبر من 500K</option>
-              <option value="1000000">أكبر من 1M</option>
-            </select>
-          </div>
-
-          <button id="refreshWhaleBtn" class="mini-btn">تحديث الحيتان</button>
-        </div>
-
-        <div class="info-line" id="whaleStatusText">بانتظار تحميل تدفقات الحيتان...</div>
-      </section>
-
-      <section class="whale-section">
-        <div class="whale-grid" id="whaleGrid">
-          <div class="loading-box">افتح تبويب Whale Flow لتحميل البيانات.</div>
-        </div>
-      </section>
-
-      <section class="whale-section">
-        <div class="whale-feed" id="whaleFeed">
-          <div class="loading-box">افتح تبويب Whale Flow لتحميل البيانات.</div>
-        </div>
-      </section>
+      <div class="section-title">
+        <h2>Whale Flow</h2>
+        <p>متابعة تحويلات الحيتان على نفس العملة</p>
+      </div>
+      <button id="loadWhalesBtn">تحديث الحيتان</button>
+      <div id="whaleFeed" class="cards"></div>
     </section>
-  </div>
+  </main>
 
-  <script>
-    const TICKER_URL = "https://api.binance.com/api/v3/ticker/24hr";
-    const EXCHANGE_INFO_URL = "https://api.binance.com/api/v3/exchangeInfo";
-    const KLINES_URL = "https://api.binance.com/api/v3/klines";
-    const WHALE_FLOW_URL = "/api/whale-flow";
+<script>
+const TICKER_URL = "https://api.binance.com/api/v3/ticker/24hr";
+const KLINES_URL = "https://api.binance.com/api/v3/klines";
+const WHALE_FLOW_URL = "/api/whale-flow";
 
-    const stablecoinSymbols = ["USDT","USDC","FDUSD","TUSD","DAI","USDE","BUSD","USDP","RLUSD","USDD"];
-    const excludedOpportunityMajors = ["BTC","ETH","BNB","SOL","XRP","DOGE","TRX"];
+const stable = ["USDT","USDC","FDUSD","TUSD","DAI","USDE","BUSD","USDP","RLUSD","USD1"];
+const excludedMajors = ["BTC","ETH","BNB","SOL","XRP","DOGE","TRX"];
 
-    const sectorMap = {
-      "Layer 1": ["BTC","ETH","BNB","SOL","XRP","ADA","AVAX","SUI","APT","NEAR","DOT","TRX","SEI","ATOM","TON","EGLD","HBAR","ALGO","XTZ","ICP","KAS"],
-      "AI": ["TAO","RENDER","FET","AGIX","VIRTUAL","ARKM","AI","NFP","PHB","CGPT","THETA","SHELL","CHR","OPEN","AIXBT","ACE","GRT","OCEAN","RLC","WLD"],
-      "Meme": ["DOGE","SHIB","PEPE","FLOKI","BONK","WIF","BOME","MEME","NEIRO","TURBO","MOG","1000PEPE","1000BONK"],
-      "Gaming": ["GALA","IMX","SAND","AXS","ENJ","RONIN","PIXEL","PORTAL","XAI","CHR","MANA","AGLD","ILV","YGG","MAGIC","ALICE","SUPER","PYR","GMT","CTSI"],
-      "DeFi": ["UNI","AAVE","LINK","MKR","SNX","CRV","1INCH","COMP","JUP","LDO","PENDLE","DYDX","RUNE","CAKE","SUSHI","KAVA","INJ","GMX","ENS","JST"],
-      "RWA": ["ONDO","MKR","POLYX","CFG","OM","PENDLE","TRU","MAV","XDC"],
-      "DePIN": ["TAO","RENDER","FIL","AR","THETA","IOTA","IO","AKT","HNT","GLM","0G"],
-      "Oracle / Infra": ["LINK","BAND","API3","PYTH","W","LAYER","THETA","GRT","ANKR","STX","CKB","SKL","SXP"],
-      "Payments / Exchange": ["XRP","XLM","TON","CRO","TRX","LTC","BCH","DASH","ZEC","JST"]
-    };
+const sectorMap = {
+  Gaming: ["GALA","SAND","ENJ","MAGIC","AXS","MANA","FLOKI","PORTAL","PIXEL","ILV","YGG"],
+  AI: ["FET","WLD","TAO","AI","ARKM","NMR","PHB","AGIX","OCEAN","RLC"],
+  DeFi: ["AAVE","UNI","CRV","CAKE","COMP","MKR","LDO","PENDLE","DYDX"],
+  Meme: ["PEPE","BONK","WIF","FLOKI","SHIB","DOGE","TURBO"],
+  Layer1: ["BTC","ETH","BNB","SOL","ADA","AVAX","SUI","APT","NEAR","DOT","TON","HBAR"],
+  Layer2: ["ARB","OP","STRK","MANTA","METIS","ZK","POL"],
+  RWA: ["ONDO","PENDLE","MKR","OM","POLYX"],
+  General: []
+};
 
-    const els = {
-      trackedCoins: document.getElementById("trackedCoins"),
-      visibleCoins: document.getElementById("visibleCoins"),
-      activeSectors: document.getElementById("activeSectors"),
-      overviewTableBody: document.getElementById("overviewTableBody"),
-      sectorsGrid: document.getElementById("sectorsGrid"),
-      sectorNavRow: document.getElementById("sectorNavRow"),
-      opportunityTopStats: document.getElementById("opportunityTopStats"),
-      opportunityGrid: document.getElementById("opportunityGrid"),
-      breakoutGrid: document.getElementById("breakoutGrid"),
-      reversalGrid: document.getElementById("reversalGrid"),
-      signalsFeed: document.getElementById("signalsFeed"),
-      analysisGrid: document.getElementById("analysisGrid"),
-      whaleTopStats: document.getElementById("whaleTopStats"),
-      whaleGrid: document.getElementById("whaleGrid"),
-      whaleFeed: document.getElementById("whaleFeed"),
-      whaleStatusText: document.getElementById("whaleStatusText"),
-      whaleSearchInput: document.getElementById("whaleSearchInput"),
-      whaleDirectionFilter: document.getElementById("whaleDirectionFilter"),
-      whaleMinAmountFilter: document.getElementById("whaleMinAmountFilter"),
-      refreshWhaleBtn: document.getElementById("refreshWhaleBtn"),
-      searchInput: document.getElementById("searchInput"),
-      statusText: document.getElementById("statusText"),
-      refreshBtn: document.getElementById("refreshBtn"),
-      top30Btn: document.getElementById("top30Btn"),
-      top50Btn: document.getElementById("top50Btn"),
-      top100Btn: document.getElementById("top100Btn"),
-      sortButtons: document.querySelectorAll(".sort-btn"),
-      mainTabs: document.querySelectorAll(".main-tab"),
-      subtabs: document.querySelectorAll(".subtab"),
-      homeTab: document.getElementById("homeTab"),
-      sectorsTab: document.getElementById("sectorsTab"),
-      opportunitiesTab: document.getElementById("opportunitiesTab"),
-      whaleTab: document.getElementById("whaleTab"),
-      subtabPanels: document.querySelectorAll(".subtab-panel")
-    };
+const els = {
+  trackedCoins: document.getElementById("trackedCoins"),
+  visibleCoins: document.getElementById("visibleCoins"),
+  activeSectors: document.getElementById("activeSectors"),
+  overviewBody: document.getElementById("overviewBody"),
+  sectorsGrid: document.getElementById("sectorsGrid"),
+  opportunityGrid: document.getElementById("opportunityGrid"),
+  breakoutGrid: document.getElementById("breakoutGrid"),
+  reversalGrid: document.getElementById("reversalGrid"),
+  signalsGrid: document.getElementById("signalsGrid"),
+  analysisGrid: document.getElementById("analysisGrid"),
+  whaleFeed: document.getElementById("whaleFeed"),
+  searchInput: document.getElementById("searchInput"),
+  statusText: document.getElementById("statusText"),
+};
 
-    let opportunitiesLoaded = false;
+let state = {
+  coins: [],
+  enriched: [],
+  whales: [],
+  limit: 30,
+  sort: "liquidity",
+  search: ""
+};
 
-    let state = {
-      allCoins: [],
-      technicalMap: new Map(),
-      whaleFlowData: [],
-      whaleLoaded: false,
-      whaleLoading: false,
-      currentSort: "liquidity_desc",
-      overviewLimit: 30,
-      currentSectorFilter: "all"
-    };
+function n(v){ return Number(v || 0); }
+function clamp(v,min,max){ return Math.max(min, Math.min(max, v)); }
+function fmtMoney(v){
+  v = n(v);
+  if (v >= 1e9) return "$" + (v/1e9).toFixed(2) + "B";
+  if (v >= 1e6) return "$" + (v/1e6).toFixed(2) + "M";
+  if (v >= 1e3) return "$" + (v/1e3).toFixed(2) + "K";
+  return "$" + v.toFixed(2);
+}
+function fmtNum(v){
+  v = n(v);
+  if (v >= 1e6) return (v/1e6).toFixed(2) + "M";
+  if (v >= 1e3) return (v/1e3).toFixed(2) + "K";
+  return v.toFixed(0);
+}
+function fmtPrice(v){
+  v = n(v);
+  if (v <= 0) return "-";
+  if (v < 0.001) return "$" + v.toFixed(8);
+  if (v < 0.1) return "$" + v.toFixed(5);
+  if (v < 1) return "$" + v.toFixed(4);
+  if (v < 100) return "$" + v.toFixed(3);
+  return "$" + v.toFixed(2);
+}
+function getSectors(asset){
+  const found = [];
+  Object.entries(sectorMap).forEach(([sector, arr]) => {
+    if (arr.includes(asset)) found.push(sector);
+  });
+  return found.length ? found : ["General"];
+}
+function firstSector(asset){ return getSectors(asset)[0]; }
 
-    function sectorSlug(name) {
-      return name.toLowerCase().replace(/[^a-z0-9]+/g, "-");
-    }
+async function fetchTicker(){
+  els.statusText.textContent = "جاري تحميل بيانات Binance...";
+  const r = await fetch(TICKER_URL);
+  const data = await r.json();
 
-    function formatPrice(value) {
-      const num = Number(value || 0);
-      if (num >= 1000) return "$" + num.toLocaleString(undefined, { maximumFractionDigits: 2 });
-      if (num >= 1) return "$" + num.toFixed(2);
-      if (num >= 0.01) return "$" + num.toFixed(4);
-      return "$" + num.toFixed(6);
-    }
-
-    function formatVolume(value) {
-      const num = Number(value || 0);
-      if (num >= 1_000_000_000) return "$" + (num / 1_000_000_000).toFixed(2) + "B";
-      if (num >= 1_000_000) return "$" + (num / 1_000_000).toFixed(2) + "M";
-      if (num >= 1_000) return "$" + (num / 1_000).toFixed(2) + "K";
-      return "$" + num.toFixed(2);
-    }
-
-    function formatTrades(value) {
-      const num = Number(value || 0);
-      if (num >= 1_000_000) return (num / 1_000_000).toFixed(2) + "M";
-      if (num >= 1_000) return (num / 1_000).toFixed(2) + "K";
-      return String(Math.round(num));
-    }
-
-    function formatTokenAmount(value) {
-      const num = Number(value || 0);
-      if (num >= 1_000_000_000) return (num / 1_000_000_000).toFixed(2) + "B";
-      if (num >= 1_000_000) return (num / 1_000_000).toFixed(2) + "M";
-      if (num >= 1_000) return (num / 1_000).toFixed(2) + "K";
-      return num.toLocaleString();
-    }
-
-    function getChangeClass(change) {
-      if (change > 0) return "positive";
-      if (change < 0) return "negative";
-      return "neutral";
-    }
-
-    function getCoinSectors(symbol) {
-      const sectors = [];
-      for (const [sectorName, coins] of Object.entries(sectorMap)) {
-        if (coins.includes(symbol)) sectors.push(sectorName);
-      }
-      return sectors;
-    }
-
-    function normalizeScore(value, maxValue) {
-      if (!maxValue || maxValue <= 0) return 0;
-      return Math.min(100, (value / maxValue) * 100);
-    }
-
-    function clamp(num, min, max) {
-      return Math.max(min, Math.min(max, num));
-    }
-
-    function pctFrom(a, b) {
-      if (!b) return 0;
-      return ((a - b) / b) * 100;
-    }
-
-    function sma(values, period) {
-      if (!values || values.length < period) return null;
-      const arr = values.slice(-period);
-      return arr.reduce((sum, v) => sum + v, 0) / period;
-    }
-
-    function calculateRSI(closes, period = 14) {
-      if (!closes || closes.length <= period) return null;
-
-      let gains = 0;
-      let losses = 0;
-
-      for (let i = 1; i <= period; i++) {
-        const diff = closes[i] - closes[i - 1];
-        if (diff >= 0) gains += diff;
-        else losses += Math.abs(diff);
-      }
-
-      let avgGain = gains / period;
-      let avgLoss = losses / period;
-
-      for (let i = period + 1; i < closes.length; i++) {
-        const diff = closes[i] - closes[i - 1];
-        const gain = diff > 0 ? diff : 0;
-        const loss = diff < 0 ? Math.abs(diff) : 0;
-
-        avgGain = ((avgGain * (period - 1)) + gain) / period;
-        avgLoss = ((avgLoss * (period - 1)) + loss) / period;
-      }
-
-      if (avgLoss === 0) return 100;
-      const rs = avgGain / avgLoss;
-      return 100 - (100 / (1 + rs));
-    }
-
-    async function fetchJSON(url) {
-      const res = await fetch(url);
-      if (!res.ok) throw new Error(`Request failed: ${url}`);
-      return res.json();
-    }
-
-    function applySort(data) {
-      const sorted = [...data];
-      switch (state.currentSort) {
-        case "change_desc":
-          sorted.sort((a, b) => b.priceChangePercent - a.priceChangePercent);
-          break;
-        case "price_desc":
-          sorted.sort((a, b) => b.lastPrice - a.lastPrice);
-          break;
-        case "trades_desc":
-          sorted.sort((a, b) => b.count - a.count);
-          break;
-        case "name_asc":
-          sorted.sort((a, b) => a.baseAsset.localeCompare(b.baseAsset));
-          break;
-        default:
-          sorted.sort((a, b) => b.quoteVolume - a.quoteVolume);
-      }
-      return sorted;
-    }
-
-    function getFilteredOverviewCoins() {
-      const query = els.searchInput.value.trim().toLowerCase();
-      return applySort(
-        state.allCoins.filter((coin) => {
-          const sectorsText = coin.sectors.join(" ").toLowerCase();
-          const searchOk =
-            !query ||
-            coin.baseAsset.toLowerCase().includes(query) ||
-            coin.symbol.toLowerCase().includes(query) ||
-            sectorsText.includes(query);
-
-          const sectorOk =
-            state.currentSectorFilter === "all" ||
-            coin.sectors.some((sector) => sectorSlug(sector) === state.currentSectorFilter);
-
-          return searchOk && sectorOk;
-        })
-      );
-    }
-
-    function getSectorStats() {
-      return Object.entries(sectorMap)
-        .map(([sectorName, symbols]) => {
-          const uniqueSymbols = [...new Set(symbols)];
-          const coins = state.allCoins.filter((coin) => uniqueSymbols.includes(coin.baseAsset));
-          const topCoins = [...coins].sort((a, b) => b.quoteVolume - a.quoteVolume).slice(0, 10);
-          const totalLiquidity = topCoins.reduce((sum, coin) => sum + coin.quoteVolume, 0);
-          const avgChange = topCoins.length
-            ? topCoins.reduce((sum, coin) => sum + coin.priceChangePercent, 0) / topCoins.length
-            : 0;
-          const greenCount = topCoins.filter((coin) => coin.priceChangePercent > 0).length;
-          const redCount = topCoins.filter((coin) => coin.priceChangePercent < 0).length;
-          const leader = topCoins[0] || null;
-          const laggard = [...topCoins].sort((a, b) => a.priceChangePercent - b.priceChangePercent)[0] || null;
-
-          return {
-            sector: sectorName,
-            slug: sectorSlug(sectorName),
-            coins,
-            topCoins,
-            totalLiquidity,
-            avgChange,
-            greenCount,
-            redCount,
-            leader,
-            laggard
-          };
-        })
-        .filter((sector) => sector.coins.length > 0)
-        .sort((a, b) => b.totalLiquidity - a.totalLiquidity);
-    }
-
-    function getSectorStrengthMap() {
-      const sectorStats = getSectorStats();
-      const maxSectorLiquidity = Math.max(...sectorStats.map((s) => s.totalLiquidity), 1);
-      const map = {};
-      sectorStats.forEach((sector) => {
-        map[sector.sector] = normalizeScore(sector.totalLiquidity, maxSectorLiquidity);
-      });
-      return map;
-    }
-
-    function isRealOpportunityCoin(coin) {
-      const leveragedSuffixes = ["UP","DOWN","BULL","BEAR"];
-      const isLeveraged = leveragedSuffixes.some((suffix) => coin.baseAsset.endsWith(suffix));
-      const isStable = stablecoinSymbols.includes(coin.baseAsset);
-      const isMajor = excludedOpportunityMajors.includes(coin.baseAsset);
-
-      if (isLeveraged || isStable || isMajor) return false;
-      if (!coin.sectors.length) return false;
-      if (coin.lastPrice <= 0) return false;
-      if (coin.quoteVolume < 400000) return false;
-      if (coin.count < 700) return false;
-      return true;
-    }
-
-    function getOpportunityUniverse() {
-      return state.allCoins.filter(isRealOpportunityCoin);
-    }
-
-    function rankOpportunity(coin) {
-      return coin.quoteVolume * 0.55 + coin.count * 220 + Math.max(coin.priceChangePercent, 0) * 260000;
-    }
-
-    function getTopTechnicalCandidates() {
-      return [...getOpportunityUniverse()]
-        .sort((a, b) => rankOpportunity(b) - rankOpportunity(a))
-        .slice(0, 12);
-    }
-
-    async function fetchKlines(symbol, interval, limit = 60) {
-      const params = new URLSearchParams({
-        symbol,
-        interval,
-        limit: String(limit)
-      });
-      return fetchJSON(`${KLINES_URL}?${params.toString()}`);
-    }
-
-    function analyzeCoin(coin, oneD, fourH) {
-      const dCloses = oneD.map(c => c.close);
-      const h4Closes = fourH.map(c => c.close);
-      const h4Volumes = fourH.map(c => c.volume);
-
-      const dailyRSI = calculateRSI(dCloses);
-      const rsi4h = calculateRSI(h4Closes);
-
-      const currentPrice = coin.lastPrice;
-      const support = Math.min(...fourH.slice(-20).map(c => c.low));
-      const resistance = Math.max(...fourH.slice(-20).map(c => c.high));
-
-      const latestVol = h4Volumes[h4Volumes.length - 1] || 0;
-      const avgPrevVol = h4Volumes.slice(-11, -1).reduce((sum, v) => sum + v, 0) / Math.max(1, h4Volumes.slice(-11, -1).length);
-      const volumeSpike = avgPrevVol > 0 ? latestVol / avgPrevVol : 1;
-
-      const sma9 = sma(h4Closes, 9);
-      const sma20 = sma(h4Closes, 20);
-
-      const nearSupport = Math.abs(pctFrom(currentPrice, support)) <= 4.5;
-      const nearResistance = Math.abs(((resistance - currentPrice) / currentPrice) * 100) <= 2.4;
-      const aboveSma9 = sma9 ? currentPrice > sma9 : false;
-      const aboveSma20 = sma20 ? currentPrice > sma20 : false;
-
-      const breakout = (currentPrice > resistance * 0.995 || nearResistance) && volumeSpike >= 1.18 && aboveSma9 && coin.priceChangePercent > 0.6;
-      const reversal = (dailyRSI !== null && dailyRSI < 42 || nearSupport) && volumeSpike >= 1.04;
-      const strongReversal = reversal && (dailyRSI !== null && dailyRSI < 36 || coin.priceChangePercent > -2.5);
-      const accumulation = volumeSpike >= 1.08 && Math.abs(coin.priceChangePercent) <= 3.5 && aboveSma20;
-
-      const scoreBase =
-        normalizeScore(coin.quoteVolume, Math.max(...state.allCoins.map(c => c.quoteVolume), 1)) * 0.32 +
-        normalizeScore(coin.count, Math.max(...state.allCoins.map(c => c.count), 1)) * 0.20 +
-        Math.max(0, coin.priceChangePercent) * 1.2;
-
-      let signalScore = scoreBase;
-      if (breakout) signalScore += 22;
-      if (strongReversal) signalScore += 18;
-      else if (reversal) signalScore += 12;
-      if (accumulation) signalScore += 10;
-      if (volumeSpike >= 1.4) signalScore += 8;
-
-      let signalType = "فرصة جيدة";
-      if (breakout) signalType = "اختراق";
-      else if (strongReversal || reversal) signalType = "ارتداد";
-      else if (accumulation) signalType = "تجميع";
-      else if (signalScore >= 70) signalType = "فرصة قوية";
-
-      const reasons = [];
-      if (breakout) reasons.push("قريبة من اختراق مهم");
-      if (strongReversal || reversal) {
-        if (dailyRSI !== null && dailyRSI < 36) reasons.push("RSI يومي منخفض جدًا");
-        else if (dailyRSI !== null && dailyRSI < 42) reasons.push("RSI يومي منخفض");
-        if (nearSupport) reasons.push("قريبة من منطقة دعم");
-      }
-      if (volumeSpike >= 1.35) reasons.push("سيولة شرائية قوية");
-      else if (volumeSpike >= 1.1) reasons.push("عودة سيولة واضحة");
-      if (coin.count > 40000) reasons.push("نشاط صفقات مرتفع");
-      else if (coin.count > 12000) reasons.push("نشاط صفقات جيد");
-      if (accumulation && reasons.length < 4) reasons.push("تجميع قبل الحركة");
-      if (coin.sectors.length && reasons.length < 4) reasons.push("القطاع يدعم الحركة");
-
-      const liquidityScore = Math.round(
-        normalizeScore(coin.quoteVolume, Math.max(...state.allCoins.map(c => c.quoteVolume), 1)) * 0.7 +
-        normalizeScore(coin.count, Math.max(...state.allCoins.map(c => c.count), 1)) * 0.3
-      );
-
+  state.coins = data
+    .filter(c =>
+      c.symbol.endsWith("USDT") &&
+      !c.symbol.includes("UP") &&
+      !c.symbol.includes("DOWN") &&
+      !c.symbol.includes("BULL") &&
+      !c.symbol.includes("BEAR")
+    )
+    .map(c => {
+      const baseAsset = c.symbol.replace("USDT","");
       return {
-        dailyRSI,
-        rsi4h,
-        support,
-        resistance,
-        volumeSpike,
-        nearSupport,
-        nearResistance,
-        breakout,
-        reversal,
-        strongReversal,
-        accumulation,
-        aboveSma9,
-        aboveSma20,
-        signalType,
-        signalScore: Math.round(clamp(signalScore, 1, 99)),
-        liquidityScore,
-        reasons: [...new Set(reasons)].slice(0, 4)
+        symbol: c.symbol,
+        baseAsset,
+        price: n(c.lastPrice),
+        change: n(c.priceChangePercent),
+        volume: n(c.quoteVolume),
+        trades: n(c.count),
+        sector: firstSector(baseAsset),
+        sectors: getSectors(baseAsset)
       };
-    }
+    })
+    .filter(c => !stable.includes(c.baseAsset));
 
-    function buildTradePlan(coin) {
-      const tech = coin.tech;
-      const current = coin.lastPrice;
+  els.trackedCoins.textContent = state.coins.length;
+  els.statusText.textContent = "تم تحميل البيانات";
+  renderAll();
+}
 
-      let entry1 = current;
-      let entry2 = current * 0.985;
-      let stop = current * 0.965;
+function getDisplayed(){
+  let arr = [...state.coins];
 
-      if (tech.signalType === "اختراق") {
-        entry1 = current;
-        entry2 = Math.max(tech.resistance * 0.992, current * 0.985);
-        stop = Math.min(tech.support * 0.988, entry2 * 0.972);
-      } else if (tech.signalType === "ارتداد") {
-        entry1 = Math.max(current * 0.997, tech.support * 1.01);
-        entry2 = Math.max(current * 0.985, tech.support * 1.002);
-        stop = Math.min(tech.support * 0.985, entry2 * 0.97);
-      } else {
-        entry1 = current * 0.997;
-        entry2 = current * 0.985;
-        stop = Math.min(tech.support * 0.988, entry2 * 0.97);
-      }
+  if (state.search) {
+    const q = state.search.toLowerCase();
+    arr = arr.filter(c =>
+      c.baseAsset.toLowerCase().includes(q) ||
+      c.symbol.toLowerCase().includes(q) ||
+      c.sector.toLowerCase().includes(q)
+    );
+  }
 
-      if (stop >= entry2) stop = entry2 * 0.97;
+  if (state.sort === "liquidity") arr.sort((a,b)=>b.volume-a.volume);
+  if (state.sort === "change") arr.sort((a,b)=>b.change-a.change);
+  if (state.sort === "trades") arr.sort((a,b)=>b.trades-a.trades);
+  if (state.sort === "price") arr.sort((a,b)=>b.price-a.price);
+  if (state.sort === "az") arr.sort((a,b)=>a.baseAsset.localeCompare(b.baseAsset));
 
-      const risk = Math.max(entry1 - stop, current * 0.01);
-      const tp1 = entry1 + risk * 1.5;
-      const tp2 = entry1 + risk * 2.5;
+  return arr.slice(0, state.limit);
+}
 
-      let status = "تحت المراقبة";
-      if (current <= stop) status = "ضرب ستوب";
-      else if (current >= tp2) status = "تحقق الهدف 2";
-      else if (current >= tp1) status = "تحقق الهدف 1";
-      else if (current >= entry2) status = "شغالة";
+function renderOverview(){
+  const arr = getDisplayed();
+  els.visibleCoins.textContent = arr.length;
+  const active = new Set(arr.map(c=>c.sector));
+  els.activeSectors.textContent = active.size;
 
-      return { entry1, entry2, stop, tp1, tp2, status };
-    }
+  els.overviewBody.innerHTML = arr.map((c,i)=>`
+    <tr>
+      <td>${i+1}</td>
+      <td><strong>${c.baseAsset}</strong><small>${c.symbol}</small></td>
+      <td>${fmtPrice(c.price)}</td>
+      <td class="${c.change >= 0 ? "green":"red"}">${Math.abs(c.change).toFixed(2)}%${c.change>=0?"+":"-"}</td>
+      <td>${fmtMoney(c.volume)}</td>
+      <td>${fmtNum(c.trades)}</td>
+      <td><span class="tag">${c.sector}</span></td>
+    </tr>
+  `).join("");
+}
 
-    function getStatusClass(status) {
-      if (status === "تحقق الهدف 2" || status === "تحقق الهدف 1") return "status-win";
-      if (status === "ضرب ستوب") return "status-loss";
-      if (status === "شغالة") return "status-live";
-      return "status-watch";
-    }
+function renderSectors(){
+  const map = {};
+  state.coins.forEach(c => {
+    if (!map[c.sector]) map[c.sector] = { count:0, volume:0, best:null };
+    map[c.sector].count++;
+    map[c.sector].volume += c.volume;
+    if (!map[c.sector].best || c.change > map[c.sector].best.change) map[c.sector].best = c;
+  });
 
-    async function analyzeOpportunities() {
-      const candidates = getTopTechnicalCandidates();
-      state.technicalMap = new Map();
-
-      if (!candidates.length) return;
-
-      els.opportunityTopStats.innerHTML = `<div class="loading-box">جاري تحليل أفضل العملات...</div>`;
-
-      for (const coin of candidates) {
-        try {
-          const [oneD, fourH] = await Promise.all([
-            fetchKlines(coin.symbol, "1d", 40),
-            fetchKlines(coin.symbol, "4h", 60)
-          ]);
-
-          const tech = analyzeCoin(coin, oneD, fourH);
-          state.technicalMap.set(coin.symbol, tech);
-        } catch (e) {
-          console.error("analysis failed", coin.symbol, e);
-        }
-      }
-    }
-
-    function enrichOpportunityCoins() {
-      const universe = getOpportunityUniverse()
-        .filter(coin => state.technicalMap.has(coin.symbol))
-        .map((coin) => {
-          const tech = state.technicalMap.get(coin.symbol);
-          const tradePlan = buildTradePlan({ ...coin, tech });
-          return { ...coin, tech, tradePlan };
-        })
-        .sort((a, b) => b.tech.signalScore - a.tech.signalScore);
-
-      return universe;
-    }
-
-    function renderOverview() {
-      const filtered = getFilteredOverviewCoins().slice(0, state.overviewLimit);
-      els.visibleCoins.textContent = filtered.length;
-
-      if (!filtered.length) {
-        els.overviewTableBody.innerHTML = `<tr><td colspan="7" class="loading-cell">لا توجد نتائج مطابقة.</td></tr>`;
-        return;
-      }
-
-      els.overviewTableBody.innerHTML = filtered.map((coin, index) => `
-        <tr>
-          <td>${index + 1}</td>
-          <td>
-            <div class="coin-main">
-              <div class="coin-symbol-main">${coin.baseAsset}</div>
-              <div class="coin-pair">${coin.symbol}</div>
-            </div>
-          </td>
-          <td>${formatPrice(coin.lastPrice)}</td>
-          <td class="${getChangeClass(coin.priceChangePercent)}">
-            ${coin.priceChangePercent > 0 ? "+" : ""}${coin.priceChangePercent.toFixed(2)}%
-          </td>
-          <td>${formatVolume(coin.quoteVolume)}</td>
-          <td>${formatTrades(coin.count)}</td>
-          <td>
-            <div class="sector-tags">
-              ${
-                coin.sectors.length
-                  ? coin.sectors.slice(0, 3).map(sector => `<span class="sector-tag">${sector}</span>`).join("")
-                  : `<span class="sector-tag more-tag">بدون قطاع</span>`
-              }
-            </div>
-          </td>
-        </tr>
-      `).join("");
-    }
-
-    function renderSectorNavigator() {
-      const sectors = getSectorStats();
-      if (!sectors.length) {
-        els.sectorNavRow.innerHTML = `<div class="loading-chip">لا توجد قطاعات.</div>`;
-        return;
-      }
-
-      els.sectorNavRow.innerHTML = sectors.map((sector) => `
-        <button class="sector-nav-btn ${state.currentSectorFilter === sector.slug ? "active" : ""}" data-sector="${sector.slug}">
-          <span class="sector-nav-name">${sector.sector}</span>
-          <span class="sector-nav-meta">${sector.coins.length} عملة · ${formatVolume(sector.totalLiquidity)}</span>
-        </button>
-      `).join("");
-    }
-
-    function getSectorStrengthClass(rank) {
-      if (rank === 1) return "strength-high";
-      if (rank <= 3) return "strength-mid";
-      return "strength-low";
-    }
-
-    function getSectorStateArabic(avgChange, greenCount, redCount) {
-      if (avgChange > 1 && greenCount > redCount) return "ساخن";
-      if (avgChange < -0.5 && redCount > greenCount) return "ضعيف";
-      return "متوازن";
-    }
-
-    function renderSectors() {
-      const query = els.searchInput.value.trim().toLowerCase();
-      const sectors = getSectorStats().filter((sector) => {
-        const sectorMatch = sector.sector.toLowerCase().includes(query);
-        const coinMatch = sector.topCoins.some((coin) => coin.baseAsset.toLowerCase().includes(query));
-        const searchOk = !query || sectorMatch || coinMatch;
-        const filterOk = state.currentSectorFilter === "all" || sector.slug === state.currentSectorFilter;
-        return searchOk && filterOk;
-      });
-
-      els.activeSectors.textContent = sectors.length;
-
-      if (!sectors.length) {
-        els.sectorsGrid.innerHTML = `<div class="loading-box">لا توجد نتائج للقطاع.</div>`;
-        return;
-      }
-
-      els.sectorsGrid.innerHTML = sectors.map((sector, index) => `
-        <article class="sector-card">
-          <div class="sector-header">
-            <div>
-              <h3>${sector.sector}</h3>
-              <p>${sector.topCoins.length} عملات ظاهرة</p>
-            </div>
-
-            <div class="sector-meta">
-              <span class="sector-badge ${getSectorStrengthClass(index + 1)}">#${index + 1} قطاع</span>
-              <span class="sector-liquidity">${formatVolume(sector.totalLiquidity)}</span>
-            </div>
-          </div>
-
-          <div class="sector-insights">
-            <span class="insight-chip">${getSectorStateArabic(sector.avgChange, sector.greenCount, sector.redCount)}</span>
-            <span class="insight-chip">القائد: ${sector.leader?.baseAsset || "-"}</span>
-            <span class="insight-chip">المتأخر: ${sector.laggard?.baseAsset || "-"}</span>
-            <span class="insight-chip">متوسط الحركة: ${sector.avgChange > 0 ? "+" : ""}${sector.avgChange.toFixed(2)}%</span>
-          </div>
-
-          <div class="sector-table">
-            ${sector.topCoins.map((coin, i) => `
-              <div class="sector-row">
-                <span class="rank-badge">${i + 1}</span>
-                <span class="coin-row-main">
-                  <strong>${coin.baseAsset}</strong>
-                  <small>${formatPrice(coin.lastPrice)}</small>
-                </span>
-                <span class="${getChangeClass(coin.priceChangePercent)}">
-                  ${coin.priceChangePercent > 0 ? "+" : ""}${coin.priceChangePercent.toFixed(2)}%
-                </span>
-                <span>${formatVolume(coin.quoteVolume)}</span>
-              </div>
-            `).join("")}
-          </div>
-        </article>
-      `).join("");
-    }
-
-    function buildOpportunityCard(coin, index) {
-      return `
-        <article class="opportunity-card clean-card">
-          <div class="card-top">
-            <div class="coin-head">
-              <div class="coinRSI: ${coin.tech.rsi?.toFixed(1) || "-"}-chip">RSI ${coin.tech.dailyRSI ? coin.tech.dailyRSI.toFixed(0) : "-"}</div>
-              <div class="coin-head-main">
-                <h3>${coin.baseAsset}</h3>
-                <p>${coin.symbol}</p>
-              </div>
-              <div class="coin-rank-chip">${index + 1}</div>
-            </div>
-          </div>
-
-          <div class="clean-metrics">
-            <div class="metric-box"><span>السعر</span><strong>${formatPrice(coin.lastPrice)}</strong></div>
-            <div class="metric-box"><span>24h</span><strong class="${getChangeClass(coin.priceChangePercent)}">${coin.priceChangePercent > 0 ? "+" : ""}${coin.priceChangePercent.toFixed(2)}%</strong></div>
-            <div class="metric-box"><span>السيولة</span><strong>${formatVolume(coin.quoteVolume)}</strong></div>
-            <div class="metric-box"><span>الصفقات</span><strong>${formatTrades(coin.count)}</strong></div>
-          </div>
-
-          <div class="clean-body">
-            <div class="clean-section">
-              <span class="clean-title">الإشارة</span>
-              <div class="signal-pill">${coin.tech.signalType}</div>
-            </div>
-
-            <div class="clean-section">
-              <span class="clean-title">الأسباب</span>
-              <ul class="why-list">
-                ${coin.tech.reasons.length ? coin.tech.reasons.map(reason => `<li>${reason}</li>`).join("") : "<li>تحت المراقبة</li>"}
-              </ul>
-            </div>
-
-            <div class="clean-section">
-              <span class="clean-title">الانحياز</span>
-              <div class="bias-pill">${
-                coin.tech.signalType === "اختراق" ? "ترقب استمرار الصعود" :
-                coin.tech.signalType === "ارتداد" ? "مراقبة شراء" :
-                coin.tech.signalType === "تجميع" ? "تجميع ومتابعة" :
-                "فرصة جيدة"
-              }</div>
-            </div>
-          </div>
-        </article>
-      `;
-    }
-
-    function renderOpportunities() {
-      if (!opportunitiesLoaded) {
-        els.opportunityTopStats.innerHTML = `<div class="loading-box">افتح تبويب Opportunities لتحميل الفرص.</div>`;
-        els.opportunityGrid.innerHTML = `<div class="loading-box">افتح تبويب Opportunities لتحميل الفرص.</div>`;
-        els.breakoutGrid.innerHTML = `<div class="loading-box">افتح تبويب Opportunities لتحميل الاختراقات.</div>`;
-        els.reversalGrid.innerHTML = `<div class="loading-box">افتح تبويب Opportunities لتحميل الانعكاسات.</div>`;
-        els.signalsFeed.innerHTML = `<div class="loading-box">افتح تبويب Opportunities لتحميل الإشارات.</div>`;
-        return;
-      }
-
-      const coins = enrichOpportunityCoins();
-
-      if (!coins.length) {
-        els.opportunityTopStats.innerHTML = `<div class="loading-box">لا توجد فرص مناسبة الآن.</div>`;
-        els.opportunityGrid.innerHTML = `<div class="loading-box">لا توجد فرص مناسبة الآن.</div>`;
-        els.breakoutGrid.innerHTML = `<div class="loading-box">لا توجد اختراقات مناسبة الآن.</div>`;
-        els.reversalGrid.innerHTML = `<div class="loading-box">لا توجد انعكاسات مناسبة الآن.</div>`;
-        els.signalsFeed.innerHTML = `<div class="loading-box">لا توجد إشارات حالية.</div>`;
-        return;
-      }
-
-      const bestCoin = coins[0];
-      const strongestRSI = [...coins]
-        .filter(c => c.tech.dailyRSI !== null)
-        .sort((a, b) => Math.abs((a.tech.dailyRSI || 50) - 40) - Math.abs((b.tech.dailyRSI || 50) - 40))[0];
-      const bestLiquidity = [...coins].sort((a, b) => b.tech.liquidityScore - a.tech.liquidityScore)[0];
-
-      els.opportunityTopStats.innerHTML = `
-        <div class="signal-card big-signal">
-          <span class="signal-label">أفضل عملة اليوم</span>
-          <span class="signal-value">${bestCoin.baseAsset}</span>
-          <span class="signal-sub">${bestCoin.tech.signalType}</span>
+  els.sectorsGrid.innerHTML = Object.entries(map)
+    .sort((a,b)=>b[1].volume-a[1].volume)
+    .map(([name,s])=>`
+      <article class="clean-card">
+        <h3>${name}</h3>
+        <div class="mini-grid">
+          <div><span>عدد العملات</span><strong>${s.count}</strong></div>
+          <div><span>السيولة</span><strong>${fmtMoney(s.volume)}</strong></div>
+          <div><span>الأقوى</span><strong>${s.best?.baseAsset || "-"}</strong></div>
+          <div><span>24h</span><strong class="${s.best?.change>=0?"green":"red"}">${s.best ? s.best.change.toFixed(2)+"%" : "-"}</strong></div>
         </div>
-        <div class="signal-card big-signal">
-          <span class="signal-label">أفضل RSI</span>
-          <span class="signal-value">${strongestRSI?.baseAsset || "-"}</span>
-          <span class="signal-sub">${strongestRSI?.tech?.dailyRSI ? strongestRSI.tech.dailyRSI.toFixed(1) : "-"}</span>
-        </div>
-        <div class="signal-card big-signal">
-          <span class="signal-label">أعلى سيولة ذكية</span>
-          <span class="signal-value">${bestLiquidity?.baseAsset || "-"}</span>
-          <span class="signal-sub">${bestLiquidity ? bestLiquidity.tech.liquidityScore + "/100" : "-"}</span>
-        </div>
-      `;
+      </article>
+    `).join("");
+}
 
-      els.opportunityGrid.innerHTML = coins.slice(0, 8).map((coin, index) => buildOpportunityCard(coin, index)).join("");
+async function fetchKlines(symbol){
+  const url = `${KLINES_URL}?symbol=${symbol}&interval=4h&limit=80`;
+  const r = await fetch(url);
+  return await r.json();
+}
 
-     const breakoutCoins = coins.filter(c =>
-  c.tech.rsi > 55 &&
-  c.tech.priceChangePercent > 2 &&
-  c.tech.liquidityScore > 50
-);
+function calcRSI(closes, period=14){
+  if (!closes || closes.length < period+2) return null;
+  let gains=0, losses=0;
+  for(let i=closes.length-period; i<closes.length; i++){
+    const diff = closes[i] - closes[i-1];
+    if(diff >= 0) gains += diff;
+    else losses -= diff;
+  }
+  if(losses === 0) return 100;
+  const rs = gains / losses;
+  return 100 - (100 / (1 + rs));
+}
 
-const reversalCoins = coins.filter(c =>
-  c.tech.rsi < 35 &&
-  c.tech.priceChangePercent < 0 &&
-  c.tech.liquidityScore > 40
-);
+function analyzeKlines(coin, klines){
+  const candles = Array.isArray(klines) ? klines.map(k=>({
+    open:n(k[1]), high:n(k[2]), low:n(k[3]), close:n(k[4]), volume:n(k[5])
+  })) : [];
 
-      els.breakoutGrid.innerHTML = breakoutCoins.length
-        ? breakoutCoins.slice(0, 8).map((coin, index) => buildOpportunityCard(coin, index)).join("")
-        : `<div class="loading-box">لا توجد اختراقات قوية الآن.</div>`;
+  const closes = candles.map(c=>c.close);
+  const rsi = calcRSI(closes);
+  const last = candles[candles.length-1];
+  const prev = candles.slice(-20, -1);
 
-      els.reversalGrid.innerHTML = reversalCoins.length
-        ? reversalCoins.slice(0, 8).map((coin, index) => buildOpportunityCard(coin, index)).join("")
-        : `<div class="loading-box">لا توجد انعكاسات واضحة الآن.</div>`;
+  const recentHigh = Math.max(...prev.map(c=>c.high));
+  const recentLow = Math.min(...prev.map(c=>c.low));
+  const avgVol = prev.reduce((s,c)=>s+c.volume,0) / Math.max(prev.length,1);
+  const volBoost = last && avgVol ? last.volume / avgVol : 1;
 
-      els.signalsFeed.innerHTML = coins.slice(0, 10).map((coin) => `
-        <div class="signal-feed-card">
-          <div class="signal-feed-top">
-            <div>
-              <h3>${coin.baseAsset}</h3>
-              <p>${coin.symbol}</p>
-            </div>
-            <span class="signal-feed-badge">${coin.tech.signalType}</span>
-          </div>
+  const breakout = last && last.close > recentHigh * 0.995 && volBoost > 0.9 && coin.change > 1.5;
+  const reversal = rsi !== null && rsi < 42 && coin.change > -8 && coin.volume > 3000000;
+  const signal = breakout ? "اختراق" : reversal ? "ارتداد" : coin.change > 2 ? "فرصة جيدة" : "مراقبة";
 
-          <div class="signal-feed-section">
-            <span class="feed-title">الأسباب</span>
-            <ul class="why-list">
-              ${coin.tech.reasons.length ? coin.tech.reasons.map(reason => `<li>${reason}</li>`).join("") : "<li>تحت المراقبة</li>"}
-            </ul>
-          </div>
-
-          <div class="signal-feed-section">
-            <span class="feed-title">الانحياز</span>
-            <div class="bias-pill">${coin.tech.signalType === "اختراق" ? "استمرار محتمل" : "مراقبة شراء"}</div>
-          </div>
-        </div>
-      `).join("");
-    }
-
-    function getWhaleCache() {
-      try {
-        const raw = localStorage.getItem("cryptoScannerWhaleCache");
-        if (!raw) return null;
-        const parsed = JSON.parse(raw);
-        if (!parsed?.time || !Array.isArray(parsed?.flows)) return null;
-        return (Date.now() - parsed.time) < (5 * 60 * 1000) ? parsed.flows : null;
-      } catch {
-        return null;
-      }
-    }
-
-    function setWhaleCache(flows) {
-      try {
-        localStorage.setItem("cryptoScannerWhaleCache", JSON.stringify({
-          time: Date.now(),
-          flows
-        }));
-      } catch {}
-    }
-
-    function minutesAgoText(minutesAgo) {
-      if (minutesAgo < 60) return `منذ ${minutesAgo} دقيقة`;
-      const hours = Math.floor(minutesAgo / 60);
-      const mins = minutesAgo % 60;
-      if (mins === 0) return `منذ ${hours} ساعة`;
-      return `منذ ${hours} ساعة و ${mins} د`;
-    }
-
-    function getFlowTypeArabic(flowType) {
-      return flowType === "bullish" ? "تجميع صاعد" : "ضغط بيع";
-    }
-
-    function getFlowBiasArabic(flowType) {
-      return flowType === "bullish" ? "دعم صعود" : "تحذير بيع";
-    }
-
-    function getFlowBadgeClass(flowType) {
-      return flowType === "bullish" ? "flow-bullish" : "flow-bearish";
-    }
-
-    function generateFallbackWhaleData() {
-      const preferredSymbols = ["GALA","SAND","PORTAL","ENJ","IMX","WLD","JST","CTSI","SUPER","YGG","MANA","PIXEL","CKB","ADA"];
-      const sourceCoins = state.allCoins.filter((coin) => preferredSymbols.includes(coin.baseAsset)).slice(0, 10);
-
-      return sourceCoins.map((coin, index) => {
-        const bullish = index % 3 !== 1;
-        return {
-          id: `${coin.baseAsset}-${index}`,
-          symbol: coin.baseAsset,
-          amount: bullish ? 1200000 + (index * 170000) : 650000 + (index * 120000),
-          fromLabel: bullish ? "Binance" : "Unknown Wallet",
-          toLabel: bullish ? "Unknown Wallet" : "Binance",
-          flowType: bullish ? "bullish" : "bearish",
-          network: "Multi-chain",
-          minutesAgo: 12 + (index * 11),
-          sector: coin.sectors[0] || "بدون قطاع",
-          note: bullish ? "احتمال تجميع واضح" : "احتمال تجهيز للبيع"
-        };
-      });
-    }
-
-    async function loadWhaleFlowOnDemand(forceRefresh = false) {
-      if (state.whaleLoading) return;
-      if (state.whaleLoaded && !forceRefresh) {
-        renderWhaleFlow();
-        return;
-      }
-
-      const cached = !forceRefresh ? getWhaleCache() : null;
-      if (cached?.length) {
-        state.whaleFlowData = cached;
-        state.whaleLoaded = true;
-        els.whaleStatusText.textContent = "تم تحميل بيانات الحيتان من الكاش.";
-        renderWhaleFlow();
-        renderAnalysis();
-        return;
-      }
-
-      state.whaleLoading = true;
-      els.whaleStatusText.textContent = "جاري تحميل تدفقات الحيتان...";
-
-      try {
-        const data = await fetchJSON(WHALE_FLOW_URL);
-        const flows = Array.isArray(data?.flows) ? data.flows : [];
-        state.whaleFlowData = flows.length ? flows : generateFallbackWhaleData();
-        setWhaleCache(state.whaleFlowData);
-        els.whaleStatusText.textContent = flows.length ? "تم تحميل تدفقات الحيتان بنجاح." : "تم عرض بيانات تجريبية مؤقتة للحيتان.";
-      } catch {
-        state.whaleFlowData = generateFallbackWhaleData();
-        els.whaleStatusText.textContent = "تم عرض بيانات تجريبية مؤقتة إلى حين ربط مصدر الحيتان الحقيقي.";
-      } finally {
-        state.whaleLoaded = true;
-        state.whaleLoading = false;
-        renderWhaleFlow();
-        renderAnalysis();
-      }
-    }
-
-    function getFilteredWhaleFlows() {
-      const query = els.whaleSearchInput.value.trim().toLowerCase();
-      const direction = els.whaleDirectionFilter.value;
-      const minAmount = Number(els.whaleMinAmountFilter.value || 0);
-
-      return state.whaleFlowData.filter((flow) => {
-        const queryOk = !query || flow.symbol.toLowerCase().includes(query) || (flow.sector || "").toLowerCase().includes(query);
-        const directionOk = direction === "all" || flow.flowType === direction;
-        const amountOk = Number(flow.amount) >= minAmount;
-        return queryOk && directionOk && amountOk;
-      });
-    }
-
-    function renderWhaleFlow() {
-      if (!state.whaleLoaded && !state.whaleFlowData.length) {
-        els.whaleTopStats.innerHTML = `<div class="loading-box">افتح تبويب Whale Flow لتحميل البيانات.</div>`;
-        els.whaleGrid.innerHTML = `<div class="loading-box">افتح تبويب Whale Flow لتحميل البيانات.</div>`;
-        els.whaleFeed.innerHTML = `<div class="loading-box">افتح تبويب Whale Flow لتحميل البيانات.</div>`;
-        return;
-      }
-
-      const flows = getFilteredWhaleFlows();
-      const bullishCount = flows.filter(f => f.flowType === "bullish").length;
-      const bearishCount = flows.filter(f => f.flowType === "bearish").length;
-      const biggestFlow = [...flows].sort((a, b) => b.amount - a.amount)[0];
-      const strongestBullish = [...flows].filter(f => f.flowType === "bullish").sort((a, b) => b.amount - a.amount)[0];
-
-      els.whaleTopStats.innerHTML = `
-        <div class="signal-card big-signal">
-          <span class="signal-label">أكبر تحويل</span>
-          <span class="signal-value">${biggestFlow?.symbol || "-"}</span>
-          <span class="signal-sub">${biggestFlow ? formatTokenAmount(biggestFlow.amount) + " " + biggestFlow.symbol : "-"}</span>
-        </div>
-        <div class="signal-card big-signal">
-          <span class="signal-label">عدد التجميعات</span>
-          <span class="signal-value">${bullishCount}</span>
-          <span class="signal-sub">حركات صاعدة محتملة</span>
-        </div>
-        <div class="signal-card big-signal">
-          <span class="signal-label">عدد الضغوط البيعية</span>
-          <span class="signal-value">${bearishCount}</span>
-          <span class="signal-sub">حركات سلبية محتملة</span>
-        </div>
-        <div class="signal-card big-signal">
-          <span class="signal-label">أقوى تجميع</span>
-          <span class="signal-value">${strongestBullish?.symbol || "-"}</span>
-          <span class="signal-sub">${strongestBullish ? formatTokenAmount(strongestBullish.amount) + " " + strongestBullish.symbol : "-"}</span>
-        </div>
-      `;
-
-      if (!flows.length) {
-        els.whaleGrid.innerHTML = `<div class="loading-box">لا توجد تدفقات مطابقة الآن.</div>`;
-        els.whaleFeed.innerHTML = `<div class="loading-box">لا توجد حركات حديثة.</div>`;
-        return;
-      }
-
-      els.whaleGrid.innerHTML = flows.slice(0, 10).map((flow) => `
-        <article class="whale-card">
-          <div class="whale-card-head">
-            <div class="coin-head-main" style="text-align:right">
-              <h3>${flow.symbol}</h3>
-              <p>${flow.network || "Unknown network"}</p>
-            </div>
-            <span class="flow-badge ${getFlowBadgeClass(flow.flowType)}">${getFlowTypeArabic(flow.flowType)}</span>
-          </div>
-
-          <div class="clean-metrics">
-            <div class="metric-box"><span>الكمية</span><strong>${formatTokenAmount(flow.amount)} ${flow.symbol}</strong></div>
-            <div class="metric-box"><span>الوقت</span><strong>${minutesAgoText(flow.minutesAgo)}</strong></div>
-            <div class="metric-box"><span>القطاع</span><strong>${flow.sector || "بدون قطاع"}</strong></div>
-            <div class="metric-box"><span>الانحياز</span><strong>${getFlowBiasArabic(flow.flowType)}</strong></div>
-          </div>
-
-          <div class="clean-body">
-            <div class="clean-section">
-              <span class="clean-title">المسار</span>
-              <div class="flow-route">
-                <span class="flow-node">${flow.fromLabel}</span>
-                <span class="flow-arrow">←</span>
-                <span class="flow-node">${flow.toLabel}</span>
-              </div>
-            </div>
-
-            <div class="clean-section">
-              <span class="clean-title">القراءة</span>
-              <ul class="why-list">
-                <li>${flow.note || "تحت المراقبة"}</li>
-                <li>${flow.flowType === "bullish" ? "سحب من منصة إلى محفظة" : "تحويل من محفظة إلى منصة"}</li>
-              </ul>
-            </div>
-          </div>
-        </article>
-      `).join("");
-
-      els.whaleFeed.innerHTML = flows.slice(0, 12).map((flow) => `
-        <div class="signal-feed-card">
-          <div class="signal-feed-top">
-            <div>
-              <h3>${flow.symbol}</h3>
-              <p>${minutesAgoText(flow.minutesAgo)}</p>
-            </div>
-            <span class="flow-badge ${getFlowBadgeClass(flow.flowType)}">${getFlowTypeArabic(flow.flowType)}</span>
-          </div>
-
-          <div class="signal-feed-section">
-            <span class="feed-title">التحويل</span>
-            <div class="flow-feed-line">${formatTokenAmount(flow.amount)} ${flow.symbol}</div>
-          </div>
-
-          <div class="signal-feed-section">
-            <span class="feed-title">من → إلى</span>
-            <div class="flow-feed-line">${flow.fromLabel} → ${flow.toLabel}</div>
-          </div>
-        </div>
-      `).join("");
-    }
-
-    function getWhaleSupportForCoin(symbol) {
-      if (!state.whaleLoaded || !state.whaleFlowData.length) {
-        return { whaleBias: "neutral", whaleText: "دعم الحيتان غير محمل بعد" };
-      }
-
-      const related = state.whaleFlowData.filter((flow) => flow.symbol === symbol);
-      const bullish = related.filter((f) => f.flowType === "bullish");
-      const bearish = related.filter((f) => f.flowType === "bearish");
-
-      const bullishAmount = bullish.reduce((sum, f) => sum + Number(f.amount || 0), 0);
-      const bearishAmount = bearish.reduce((sum, f) => sum + Number(f.amount || 0), 0);
-
-      if (bullishAmount > bearishAmount && bullishAmount > 0) {
-        return { whaleBias: "bullish", whaleText: "دعم الحيتان: تجميع واضح" };
-      }
-      if (bearishAmount > bullishAmount && bearishAmount > 0) {
-        return { whaleBias: "bearish", whaleText: "تحذير الحيتان: تدفق نحو المنصات" };
-      }
-      return { whaleBias: "neutral", whaleText: "لا يوجد دعم واضح من الحيتان" };
-    }
-
-   function buildSmartTradeSetup(coin) {
-  const price = Number(coin.lastPrice || coin.price || 0);
-  const change = Number(coin.priceChangePercent || 0);
-  const volume = Number(coin.quoteVolume || 0);
-  const trades = Number(coin.count || 0);
-  const rsi = coin.tech?.rsi || coin.rsi || "-";
-
-  const isStrong = volume > 20000000 && trades > 80000;
-  const isFast = change > 3;
-  const isDip = change < -3;
-  const isReversal = change > 1 && change < 6;
-  const isBreakout = change > 6 && volume > 10000000;
-
-  const entry1 = price;
-  const entry2 = price * 0.975;
-  const stop = price * 0.94;
-  const tp1 = price * 1.065;
-  const tp2 = price * 1.13;
-
-  let status = "مراقبة";
-  if (price >= tp2) status = "حقق الهدف الثاني";
-  else if (price >= tp1) status = "حقق الهدف الأول";
-  else if (price <= stop) status = "ضرب الستوب";
-  else if (price <= entry1 && price >= entry2) status = "داخل منطقة الدخول";
-  else status = "شغالة";
-
-  const reasons = [];
-
-  if (isStrong) reasons.push("سيولة قوية تدعم الحركة");
-  if (trades > 100000) reasons.push("نشاط صفقات مرتفع");
-  if (isFast) reasons.push("زخم صاعد واضح");
-  if (isDip) reasons.push("ارتداد محتمل بعد هبوط قوي");
-  if (isReversal) reasons.push("بداية انعكاس سعري");
-  if (isBreakout) reasons.push("اختراق مع حجم تداول جيد");
-  if (volume > 50000000) reasons.push("اهتمام عالي من السوق");
-  if (rsi !== "-" && Number(rsi) < 35) reasons.push("RSI منخفض ويدعم الارتداد");
-  if (reasons.length < 2) reasons.push("فرصة مضاربية تحت المراقبة");
+  const liquidityScore = clamp((coin.volume / 1000000) * 2 + (coin.trades / 10000), 1, 100);
+  const signalScore = clamp(
+    (breakout ? 35 : 0) +
+    (reversal ? 30 : 0) +
+    (volBoost * 10) +
+    (coin.change > 0 ? coin.change * 2 : 0) +
+    liquidityScore * 0.35,
+    1, 100
+  );
 
   return {
-    entry1,
-    entry2,
-    stop,
-    tp1,
-    tp2,
-    status,
-    rsi,
-    reasons: reasons.slice(0, 4)
+    rsi: rsi ? Number(rsi.toFixed(1)) : null,
+    recentHigh,
+    recentLow,
+    volBoost,
+    breakout,
+    reversal,
+    signal,
+    liquidityScore: Math.round(liquidityScore),
+    signalScore: Math.round(signalScore)
   };
 }
 
-function formatTradePrice(value) {
-  if (!Number.isFinite(value) || value <= 0) return "-";
-  if (value < 0.001) return "$" + value.toFixed(8);
-  if (value < 0.1) return "$" + value.toFixed(5);
-  if (value < 1) return "$" + value.toFixed(4);
-  if (value < 100) return "$" + value.toFixed(3);
-  return "$" + value.toFixed(2);
+async function loadOpportunities(){
+  els.opportunityGrid.innerHTML = `<div class="loading-box">جاري تحليل الفرص...</div>`;
+
+  const candidates = state.coins
+    .filter(c => !excludedMajors.includes(c.baseAsset))
+    .sort((a,b)=> (b.volume*b.change) - (a.volume*a.change))
+    .slice(0, 24);
+
+  const enriched = [];
+
+  for (const coin of candidates) {
+    try {
+      const klines = await fetchKlines(coin.symbol);
+      const tech = analyzeKlines(coin, klines);
+      enriched.push({...coin, tech});
+    } catch {
+      enriched.push({...coin, tech:{
+        rsi:null, breakout:false, reversal:false, signal:"مراقبة",
+        liquidityScore: Math.round(clamp(coin.volume/1000000, 1, 100)),
+        signalScore: Math.round(clamp(coin.change + coin.volume/10000000, 1, 80)),
+        recentLow: coin.price*0.94,
+        recentHigh: coin.price*1.08,
+        volBoost: 1
+      }});
+    }
+  }
+
+  state.enriched = enriched.sort((a,b)=>b.tech.signalScore-a.tech.signalScore);
+  renderOpportunities();
 }
 
-function renderAnalysis() {
-  if (!opportunitiesLoaded) {
-    els.analysisGrid.innerHTML = `<div class="loading-box">افتح تبويب Opportunities لتحميل التحليلات.</div>`;
-    return;
-  }
+function reasonsFor(c){
+  const r = [];
+  if (c.volume > 20000000) r.push("سيولة قوية تدعم الحركة");
+  if (c.trades > 80000) r.push("نشاط صفقات مرتفع");
+  if (c.tech?.breakout) r.push("اختراق قريب من مقاومة");
+  if (c.tech?.reversal) r.push("احتمال ارتداد من منطقة منخفضة");
+  if (c.tech?.rsi && c.tech.rsi < 42) r.push("RSI منخفض ويدعم الارتداد");
+  if (c.change > 5) r.push("زخم صاعد واضح");
+  if (c.tech?.volBoost > 1.3) r.push("ارتفاع في حجم التداول");
+  if (c.sector !== "General") r.push("القطاع يدعم الحركة");
+  return r.length ? r.slice(0,4) : ["فرصة مضاربية تحت المراقبة"];
+}
 
-  const coins = enrichOpportunityCoins()
-    .filter((coin) => Number(coin.lastPrice || coin.price || 0) > 0)
-    .slice(0, 8)
-    .map((coin) => {
-      const setup = buildSmartTradeSetup(coin);
-      const score =
-        Number(coin.tech?.signalScore || 0) +
-        Number(coin.tech?.liquidityScore || 0) * 0.12 +
-        Number(coin.priceChangePercent || 0);
-
-      return { ...coin, setup, finalScore: Math.round(clamp(score, 1, 99)) };
-    })
-    .sort((a, b) => b.finalScore - a.finalScore);
-
-  if (!coins.length) {
-    els.analysisGrid.innerHTML = `<div class="loading-box">لا توجد توصيات حالياً.</div>`;
-    return;
-  }
-
-  els.analysisGrid.innerHTML = coins.map((coin, index) => {
-    const setup = coin.setup;
-
-    return `
-      <article class="analysis-card clean-card">
-        <div class="card-top">
-          <div class="rank-badge">${index + 1}</div>
-          <div class="coin-head">
-            <h3>${coin.baseAsset}</h3>
-            <span>${coin.symbol}</span>
-          </div>
-          <div class="rsi-badge">RSI ${setup.rsi}</div>
+function buildCard(c, i){
+  const rsi = c.tech?.rsi ? c.tech.rsi : "-";
+  return `
+    <article class="clean-card coin-card">
+      <div class="card-top">
+        <span class="rank-badge">${i+1}</span>
+        <div>
+          <h3>${c.baseAsset}</h3>
+          <small>${c.symbol}</small>
         </div>
+        <span class="rsi-badge">RSI ${rsi}</span>
+      </div>
+      <div class="mini-grid">
+        <div><span>24h</span><strong class="${c.change>=0?"green":"red"}">${Math.abs(c.change).toFixed(2)}%${c.change>=0?"+":"-"}</strong></div>
+        <div><span>السعر</span><strong>${fmtPrice(c.price)}</strong></div>
+        <div><span>السيولة</span><strong>${fmtMoney(c.volume)}</strong></div>
+        <div><span>الصفقات</span><strong>${fmtNum(c.trades)}</strong></div>
+      </div>
+      <div class="clean-section">
+        <span class="signal-pill">${c.tech?.signal || "فرصة جيدة"}</span>
+        <ul>${reasonsFor(c).map(x=>`<li>${x}</li>`).join("")}</ul>
+      </div>
+    </article>
+  `;
+}
 
-        <div class="analysis-status-row">
-          <span class="signal-pill">${coin.signal || "فرصة جيدة"}</span>
-          <span class="signal-pill">${setup.status}</span>
-        </div>
+function tradeSetup(c){
+  const p = c.price;
+  const low = c.tech?.recentLow && isFinite(c.tech.recentLow) ? c.tech.recentLow : p*0.94;
+  const high = c.tech?.recentHigh && isFinite(c.tech.recentHigh) ? c.tech.recentHigh : p*1.08;
 
-        <div class="analysis-levels">
-          <div class="metric-box">
-            <span>الدخول 1</span>
-            <strong>${formatTradePrice(setup.entry1)}</strong>
-          </div>
-          <div class="metric-box">
-            <span>الدخول 2</span>
-            <strong>${formatTradePrice(setup.entry2)}</strong>
-          </div>
-          <div class="metric-box">
-            <span>الستوب</span>
-            <strong>${formatTradePrice(setup.stop)}</strong>
-          </div>
-          <div class="metric-box">
-            <span>الهدف 1</span>
-            <strong>${formatTradePrice(setup.tp1)}</strong>
-          </div>
-          <div class="metric-box">
-            <span>الهدف 2</span>
-            <strong>${formatTradePrice(setup.tp2)}</strong>
-          </div>
-          <div class="metric-box">
-            <span>السعر الحالي</span>
-            <strong>${formatTradePrice(setup.entry1)}</strong>
-          </div>
-        </div>
+  const entry1 = p;
+  const entry2 = Math.max(low * 1.02, p * 0.965);
+  const stop = Math.min(low * 0.985, entry2 * 0.97);
+  const risk = entry1 - stop;
 
-        <div class="clean-section">
-          <span class="clean-title">الأسباب</span>
-          <ul>
-            ${setup.reasons.map((reason) => `<li>${reason}</li>`).join("")}
-          </ul>
-        </div>
+  const tp1 = Math.max(high, entry1 + risk * 1.5);
+  const tp2 = Math.max(tp1 * 1.06, entry1 + risk * 2.5);
 
-        <div class="clean-section">
-          <span class="clean-title">دعم الحيتان</span>
-          <div class="whale-support-line whale-neutral">لا يوجد دعم واضح من الحيتان</div>
+  let status = "شغالة";
+  if (p <= stop) status = "ضرب الستوب";
+  else if (p >= tp2) status = "حقق الهدف الثاني";
+  else if (p >= tp1) status = "حقق الهدف الأول";
+  else if (p <= entry1 && p >= entry2) status = "داخل منطقة الدخول";
+
+  return {entry1, entry2, stop, tp1, tp2, status};
+}
+
+function buildAnalysisCard(c, i){
+  const s = tradeSetup(c);
+  const rsi = c.tech?.rsi ? c.tech.rsi : "-";
+  return `
+    <article class="clean-card analysis-card">
+      <div class="card-top">
+        <span class="rank-badge">${i+1}</span>
+        <div>
+          <h3>${c.baseAsset}</h3>
+          <small>${c.symbol}</small>
         </div>
+        <span class="rsi-badge">RSI ${rsi}</span>
+      </div>
+
+      <div class="analysis-status-row">
+        <span class="signal-pill">${c.tech?.signal || "فرصة جيدة"}</span>
+        <span class="signal-pill">${s.status}</span>
+      </div>
+
+      <div class="analysis-levels">
+        <div class="metric-box"><span>الدخول 1</span><strong>${fmtPrice(s.entry1)}</strong></div>
+        <div class="metric-box"><span>الدخول 2</span><strong>${fmtPrice(s.entry2)}</strong></div>
+        <div class="metric-box"><span>الستوب</span><strong>${fmtPrice(s.stop)}</strong></div>
+        <div class="metric-box"><span>الهدف 1</span><strong>${fmtPrice(s.tp1)}</strong></div>
+        <div class="metric-box"><span>الهدف 2</span><strong>${fmtPrice(s.tp2)}</strong></div>
+        <div class="metric-box"><span>السعر الحالي</span><strong>${fmtPrice(c.price)}</strong></div>
+      </div>
+
+      <div class="clean-section">
+        <span class="clean-title">الأسباب</span>
+        <ul>${reasonsFor(c).map(x=>`<li>${x}</li>`).join("")}</ul>
+      </div>
+    </article>
+  `;
+}
+
+function renderOpportunities(){
+  const arr = state.enriched;
+  const breakout = arr.filter(c => c.tech?.breakout || (c.change > 4 && c.tech?.liquidityScore > 35)).slice(0,8);
+  const reversal = arr.filter(c => c.tech?.reversal || (c.tech?.rsi && c.tech.rsi < 45 && c.volume > 3000000)).slice(0,8);
+  const signals = arr.filter(c => c.tech?.signalScore > 30).slice(0,10);
+
+  els.opportunityGrid.innerHTML = arr.slice(0,8).map(buildCard).join("") || `<div class="loading-box">لا توجد فرص حالياً</div>`;
+  els.breakoutGrid.innerHTML = breakout.map(buildCard).join("") || `<div class="loading-box">لا توجد اختراقات حالياً</div>`;
+  els.reversalGrid.innerHTML = reversal.map(buildCard).join("") || `<div class="loading-box">لا توجد انعكاسات حالياً</div>`;
+  els.signalsGrid.innerHTML = signals.map(buildCard).join("") || `<div class="loading-box">لا توجد إشارات حالياً</div>`;
+  els.analysisGrid.innerHTML = arr.slice(0,8).map(buildAnalysisCard).join("") || `<div class="loading-box">لا توجد توصيات حالياً</div>`;
+}
+
+async function loadWhales(){
+  els.whaleFeed.innerHTML = `<div class="loading-box">جاري تحميل الحيتان...</div>`;
+  try {
+    const r = await fetch(WHALE_FLOW_URL);
+    const data = await r.json();
+    state.whales = data.flows || [];
+    els.whaleFeed.innerHTML = state.whales.map(w=>`
+      <article class="clean-card">
+        <h3>${w.symbol}</h3>
+        <div class="mini-grid">
+          <div><span>الكمية</span><strong>${fmtNum(w.amount)}</strong></div>
+          <div><span>الاتجاه</span><strong class="${w.flowType==="bullish"?"green":"red"}">${w.flowType==="bullish"?"تجميع":"ضغط بيع"}</strong></div>
+          <div><span>من</span><strong>${w.fromLabel}</strong></div>
+          <div><span>إلى</span><strong>${w.toLabel}</strong></div>
+        </div>
+        <p>${w.note}</p>
       </article>
-    `;
-  }).join("");
+    `).join("") || `<div class="loading-box">لا توجد تدفقات حالياً</div>`;
+  } catch {
+    els.whaleFeed.innerHTML = `<div class="loading-box">فشل تحميل الحيتان</div>`;
+  }
 }
 
-    function switchMainTab(tabName) {
-      els.mainTabs.forEach((tab) => {
-        tab.classList.toggle("active", tab.dataset.tab === tabName);
-      });
+function renderAll(){
+  renderOverview();
+  renderSectors();
+}
 
-      els.homeTab.classList.toggle("active", tabName === "home");
-      els.sectorsTab.classList.toggle("active", tabName === "sectors");
-      els.opportunitiesTab.classList.toggle("active", tabName === "opportunities");
-      els.whaleTab.classList.toggle("active", tabName === "whale");
+document.querySelectorAll(".main-tab").forEach(btn=>{
+  btn.addEventListener("click", ()=>{
+    document.querySelectorAll(".main-tab").forEach(b=>b.classList.remove("active"));
+    document.querySelectorAll(".tab-panel").forEach(p=>p.classList.remove("active"));
+    btn.classList.add("active");
+    document.getElementById(btn.dataset.tab+"Tab").classList.add("active");
+    if(btn.dataset.tab === "opportunities" && !state.enriched.length) loadOpportunities();
+  });
+});
 
-      if (tabName === "opportunities" && !opportunitiesLoaded) {
-        opportunitiesLoaded = true;
-        loadOpportunitiesTab();
-      }
+document.querySelectorAll(".sub-tab").forEach(btn=>{
+  btn.addEventListener("click", ()=>{
+    document.querySelectorAll(".sub-tab").forEach(b=>b.classList.remove("active"));
+    document.querySelectorAll(".sub-panel").forEach(p=>p.classList.remove("active"));
+    btn.classList.add("active");
+    document.getElementById(btn.dataset.subtab+"Sub").classList.add("active");
+  });
+});
 
-      if (tabName === "whale") {
-        loadWhaleFlowOnDemand(false);
-      }
-    }
+document.querySelectorAll(".limit-btn").forEach(btn=>{
+  btn.addEventListener("click", ()=>{
+    document.querySelectorAll(".limit-btn").forEach(b=>b.classList.remove("active"));
+    btn.classList.add("active");
+    state.limit = Number(btn.dataset.limit);
+    renderAll();
+  });
+});
 
-    function switchSubtab(tabName) {
-      els.subtabs.forEach((tab) => {
-        tab.classList.toggle("active", tab.dataset.subtab === tabName);
-      });
+document.querySelectorAll("[data-sort]").forEach(btn=>{
+  btn.addEventListener("click", ()=>{
+    document.querySelectorAll("[data-sort]").forEach(b=>b.classList.remove("active"));
+    btn.classList.add("active");
+    state.sort = btn.dataset.sort;
+    renderAll();
+  });
+});
 
-      els.subtabPanels.forEach((panel) => {
-        panel.classList.toggle("active", panel.id === tabName);
-      });
-    }
+els.searchInput.addEventListener("input", e=>{
+  state.search = e.target.value.trim();
+  renderAll();
+});
 
-    async function loadOpportunitiesTab() {
-      els.opportunityTopStats.innerHTML = `<div class="loading-box">جاري تحليل الفرص...</div>`;
-      els.opportunityGrid.innerHTML = `<div class="loading-box">جاري تحميل الفرص...</div>`;
-      els.breakoutGrid.innerHTML = `<div class="loading-box">جاري تحميل الاختراقات...</div>`;
-      els.reversalGrid.innerHTML = `<div class="loading-box">جاري تحميل الانعكاسات...</div>`;
-      els.signalsFeed.innerHTML = `<div class="loading-box">جاري تحميل الإشارات...</div>`;
-      els.analysisGrid.innerHTML = `<div class="loading-box">جاري تحميل التحليلات...</div>`;
+document.getElementById("refreshBtn").addEventListener("click", fetchTicker);
+document.getElementById("loadWhalesBtn").addEventListener("click", loadWhales);
 
-      await analyzeOpportunities();
-      renderOpportunities();
-      renderAnalysis();
-    }
-
-    function renderAll() {
-      renderOverview();
-      renderSectorNavigator();
-      renderSectors();
-      renderWhaleFlow();
-      renderOpportunities();
-      renderAnalysis();
-    }
-
-    async function fetchBinanceData() {
-      try {
-        els.statusText.textContent = "جاري تحميل بيانات Binance...";
-        els.overviewTableBody.innerHTML = `<tr><td colspan="7" class="loading-cell">جاري التحميل...</td></tr>`;
-
-        const [tickers, exchangeInfo] = await Promise.all([
-          fetchJSON(TICKER_URL),
-          fetchJSON(EXCHANGE_INFO_URL)
-        ]);
-
-        const validSymbols = new Set(
-          (exchangeInfo.symbols || [])
-            .filter((item) => item.status === "TRADING" && item.quoteAsset === "USDT" && item.isSpotTradingAllowed === true)
-            .map((item) => item.symbol)
-        );
-
-        state.allCoins = (tickers || [])
-          .filter((item) => validSymbols.has(item.symbol))
-          .map((item) => {
-            const baseAsset = item.symbol.replace(/USDT$/, "");
-            return {
-              symbol: item.symbol,
-              baseAsset,
-              lastPrice: Number(item.lastPrice),
-              priceChangePercent: Number(item.priceChangePercent),
-              quoteVolume: Number(item.quoteVolume),
-              count: Number(item.count),
-              sectors: getCoinSectors(baseAsset)
-            };
-          })
-          .filter((coin) => !["UP","DOWN","BULL","BEAR"].some((suffix) => coin.baseAsset.endsWith(suffix)));
-
-        els.trackedCoins.textContent = state.allCoins.length;
-        renderOverview();
-        renderSectorNavigator();
-        renderSectors();
-
-        els.statusText.textContent = "تم تحميل البيانات بنجاح.";
-      } catch (error) {
-        console.error(error);
-        els.statusText.textContent = "حدث خطأ أثناء تحميل البيانات.";
-        els.overviewTableBody.innerHTML = `<tr><td colspan="7" class="loading-cell">فشل تحميل الجدول.</td></tr>`;
-      }
-    }
-
-    els.searchInput.addEventListener("input", () => {
-      renderOverview();
-      renderSectors();
-      if (opportunitiesLoaded) {
-        renderOpportunities();
-        renderAnalysis();
-      }
-    });
-
-    els.whaleSearchInput.addEventListener("input", renderWhaleFlow);
-    els.whaleDirectionFilter.addEventListener("change", renderWhaleFlow);
-    els.whaleMinAmountFilter.addEventListener("change", renderWhaleFlow);
-
-    els.refreshWhaleBtn.addEventListener("click", () => {
-      state.whaleLoaded = false;
-      loadWhaleFlowOnDemand(true);
-    });
-
-    els.refreshBtn.addEventListener("click", async () => {
-      await fetchBinanceData();
-      if (opportunitiesLoaded) {
-        await loadOpportunitiesTab();
-      }
-    });
-
-    els.top30Btn.addEventListener("click", () => {
-      state.overviewLimit = 30;
-      els.top30Btn.classList.add("active");
-      els.top50Btn.classList.remove("active");
-      els.top100Btn.classList.remove("active");
-      renderOverview();
-    });
-
-    els.top50Btn.addEventListener("click", () => {
-      state.overviewLimit = 50;
-      els.top50Btn.classList.add("active");
-      els.top30Btn.classList.remove("active");
-      els.top100Btn.classList.remove("active");
-      renderOverview();
-    });
-
-    els.top100Btn.addEventListener("click", () => {
-      state.overviewLimit = 100;
-      els.top100Btn.classList.add("active");
-      els.top30Btn.classList.remove("active");
-      els.top50Btn.classList.remove("active");
-      renderOverview();
-    });
-
-    els.sortButtons.forEach((button) => {
-      button.addEventListener("click", () => {
-        state.currentSort = button.dataset.sort;
-        els.sortButtons.forEach((btn) => btn.classList.toggle("active", btn === button));
-        renderOverview();
-      });
-    });
-
-    els.mainTabs.forEach((tab) => {
-      tab.addEventListener("click", () => switchMainTab(tab.dataset.tab));
-    });
-
-    els.subtabs.forEach((tab) => {
-      tab.addEventListener("click", () => switchSubtab(tab.dataset.subtab));
-    });
-
-    document.addEventListener("click", (event) => {
-      const target = event.target.closest(".sector-nav-btn");
-      if (!target) return;
-
-      state.currentSectorFilter = target.dataset.sector;
-      document.querySelectorAll(".sector-nav-btn").forEach((btn) => {
-        btn.classList.toggle("active", btn.dataset.sector === state.currentSectorFilter);
-      });
-
-      renderOverview();
-      renderSectors();
-      if (opportunitiesLoaded) {
-        renderOpportunities();
-        renderAnalysis();
-      }
-    });
-
-    fetchBinanceData();
-  </script>
+fetchTicker();
+</script>
 </body>
 </html>
