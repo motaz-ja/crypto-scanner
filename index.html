@@ -287,26 +287,90 @@ function renderOverview(){
 
 function renderSectors(){
   const map = {};
+
   state.coins.forEach(c => {
-    if (!map[c.sector]) map[c.sector] = { count:0, volume:0, best:null };
-    map[c.sector].count++;
-    map[c.sector].volume += c.volume;
-    if (!map[c.sector].best || c.change > map[c.sector].best.change) map[c.sector].best = c;
+    const sectors = c.sectors && c.sectors.length ? c.sectors : [c.sector || "General"];
+
+    sectors.forEach(sector => {
+      if (!map[sector]) {
+        map[sector] = {
+          count: 0,
+          volume: 0,
+          coins: []
+        };
+      }
+
+      map[sector].count++;
+      map[sector].volume += c.volume;
+      map[sector].coins.push(c);
+    });
   });
 
   els.sectorsGrid.innerHTML = Object.entries(map)
-    .sort((a,b)=>b[1].volume-a[1].volume)
-    .map(([name,s])=>`
-      <article class="clean-card">
-        <h3>${name}</h3>
-        <div class="mini-grid">
-          <div><span>عدد العملات</span><strong>${s.count}</strong></div>
-          <div><span>السيولة</span><strong>${fmtMoney(s.volume)}</strong></div>
-          <div><span>الأقوى</span><strong>${s.best?.baseAsset || "-"}</strong></div>
-          <div><span>24h</span><strong class="${s.best?.change>=0?"green":"red"}">${s.best ? s.best.change.toFixed(2)+"%" : "-"}</strong></div>
-        </div>
-      </article>
-    `).join("");
+    .sort((a,b) => b[1].volume - a[1].volume)
+    .map(([name, s]) => {
+      const leader = [...s.coins].sort((a,b) => b.volume - a.volume)[0];
+      const topGainer = [...s.coins].sort((a,b) => b.change - a.change)[0];
+      const topCoins = [...s.coins].sort((a,b) => b.volume - a.volume).slice(0, 5);
+
+      return `
+        <article class="sector-pro-card clean-card">
+          <div class="sector-pro-head">
+            <div>
+              <h3>${name}</h3>
+              <p>${s.count} عملة داخل القطاع</p>
+            </div>
+            <div class="sector-leader">
+              <span>قائد القطاع</span>
+              <strong>${leader?.baseAsset || "-"}</strong>
+            </div>
+          </div>
+
+          <div class="sector-pro-stats">
+            <div>
+              <span>سيولة القطاع</span>
+              <strong>${fmtMoney(s.volume)}</strong>
+            </div>
+            <div>
+              <span>أقوى صعود</span>
+              <strong class="${topGainer?.change >= 0 ? "green" : "red"}">
+                ${topGainer?.baseAsset || "-"} ${topGainer ? topGainer.change.toFixed(2) + "%" : ""}
+              </strong>
+            </div>
+          </div>
+
+          <div class="sector-pro-list">
+            ${topCoins.map((coin, index) => `
+              <div class="sector-pro-row">
+                <span class="sector-rank">${index + 1}</span>
+                <div>
+                  <strong>${coin.baseAsset}</strong>
+                  <small>${coin.symbol}</small>
+                </div>
+                <div>
+                  <span>السعر</span>
+                  <strong>${fmtPrice(coin.price)}</strong>
+                </div>
+                <div>
+                  <span>السيولة</span>
+                  <strong>${fmtMoney(coin.volume)}</strong>
+                </div>
+                <div>
+                  <span>24h</span>
+                  <strong class="${coin.change >= 0 ? "green" : "red"}">${coin.change.toFixed(2)}%</strong>
+                </div>
+                <div>
+                  <span>الصفقات</span>
+                  <strong>${fmtNum(coin.trades)}</strong>
+                </div>
+              </div>
+            `).join("")}
+          </div>
+        </article>
+      `;
+    })
+    .join("");
+}
 }
 
 async function fetchKlines(symbol){
