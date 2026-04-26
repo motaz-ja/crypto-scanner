@@ -367,7 +367,7 @@ function renderSectors(){
                 </div>
                 <div>
                   <span>الصفقات</span>
-                  <strong>${fmtNum(coin.trades)}</strong>
+                  <strong>${coin.trades ? Number(coin.trades).toLocaleString() : "-"}</strong>
                 </div>
               </div>
             `).join("")}
