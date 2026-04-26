@@ -711,3 +711,35 @@ td small {
     grid-column: 2;
   }
 }
+.trade-status {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 14px;
+  border-radius: 16px;
+  font-weight: 900;
+}
+
+.status-live {
+  background: rgba(47, 109, 246, 0.16);
+  border: 1px solid rgba(47, 109, 246, 0.35);
+  color: #9bbcff;
+}
+
+.status-win {
+  background: rgba(22, 199, 132, 0.16);
+  border: 1px solid rgba(22, 199, 132, 0.35);
+  color: #77f0bf;
+}
+
+.status-loss {
+  background: rgba(255, 77, 104, 0.16);
+  border: 1px solid rgba(255, 77, 104, 0.35);
+  color: #ff9bab;
+}
+
+.status-watch {
+  background: rgba(240, 185, 11, 0.14);
+  border: 1px solid rgba(240, 185, 11, 0.35);
+  color: #ffd978;
+}
