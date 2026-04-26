@@ -871,7 +871,8 @@ document.querySelectorAll(".sub-tab").forEach(btn=>{
 document.getElementById("subtabDescription").textContent = desc[btn.dataset.subtab];
   });
 });
-
+}
+  
 document.querySelectorAll(".limit-btn").forEach(btn=>{
   btn.addEventListener("click", ()=>{
     document.querySelectorAll(".limit-btn").forEach(b=>b.classList.remove("active"));
