@@ -806,8 +806,8 @@ const analysisCoins = arr
 els.analysisGrid.innerHTML = analysisCoins.map(buildAnalysisCard).join("") || `<div class="loading-box">لا توجد توصيات حالياً</div>`;
 
   console.log("Saving to history:", analysisCoins.length);
-  
 saveAnalysisTradesToHistory(analysisCoins);
+console.log("History now:", getHistory().length);
 renderHistory();
 }
 
