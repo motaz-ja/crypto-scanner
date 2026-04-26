@@ -467,7 +467,8 @@ async function loadOpportunities(){
   }
 
   state.enriched = enriched.sort((a,b)=>b.tech.signalScore-a.tech.signalScore);
-
+}
+  
   const HISTORY_KEY = "cryptoScannerHistoryV1";
 const HISTORY_DAYS = 7;
 
