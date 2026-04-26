@@ -646,8 +646,8 @@ function renderHistory() {
 
   }
   
-  renderOpportunities(); 
-
+function renderOpportunities(){
+  
 function reasonsFor(c){
   const r = [];
   if (c.volume > 20000000) r.push("سيولة قوية تدعم الحركة");
@@ -768,7 +768,6 @@ function buildAnalysisCard(c, i){
             
   `;
 
-function renderOpportunities(){
   const arr = state.enriched;
   const breakout = arr
   .filter(c => c.change > 3 && c.volume > 5000000 && c.trades > 30000)
