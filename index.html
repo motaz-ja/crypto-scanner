@@ -91,6 +91,7 @@
   <button class="sub-tab" data-subtab="reversal">Reversal</button>
   <button class="sub-tab" data-subtab="signals">Signals</button>
   <button class="sub-tab" data-subtab="analysis">Analysis</button>
+  <button class="sub-tab" data-subtab="history">History</button>
 </nav>
 
 <div id="overviewSub" class="sub-panel active">
@@ -111,6 +112,10 @@
 
 <div id="analysisSub" class="sub-panel">
   <div id="analysisGrid" class="cards"></div>
+  </div>
+      
+  <div id="historySub" class="sub-panel">
+  <div id="historyGrid" class="cards"></div>
 </div>
     </section>
 
@@ -154,6 +159,7 @@ const els = {
   reversalGrid: document.getElementById("reversalGrid"),
   signalsGrid: document.getElementById("signalsGrid"),
   analysisGrid: document.getElementById("analysisGrid"),
+  historyGrid: document.getElementById("historyGrid"),
   whaleFeed: document.getElementById("whaleFeed"),
   searchInput: document.getElementById("searchInput"),
   statusText: document.getElementById("statusText"),
@@ -462,6 +468,182 @@ async function loadOpportunities(){
   }
 
   state.enriched = enriched.sort((a,b)=>b.tech.signalScore-a.tech.signalScore);
+
+  const HISTORY_KEY = "cryptoScannerHistoryV1";
+const HISTORY_DAYS = 7;
+
+function getHistory() {
+  try {
+    const raw = localStorage.getItem(HISTORY_KEY);
+    const items = raw ? JSON.parse(raw) : [];
+    const cutoff = Date.now() - HISTORY_DAYS * 24 * 60 * 60 * 1000;
+    return items.filter(t => t.createdAt >= cutoff);
+  } catch {
+    return [];
+  }
+}
+
+function saveHistory(items) {
+  const cutoff = Date.now() - HISTORY_DAYS * 24 * 60 * 60 * 1000;
+  const clean = items
+    .filter(t => t.createdAt >= cutoff)
+    .sort((a, b) => b.createdAt - a.createdAt);
+
+  localStorage.setItem(HISTORY_KEY, JSON.stringify(clean));
+}
+
+function getTradeStatusByPrice(trade, price) {
+  const p = Number(price || 0);
+
+  let status = trade.status || "داخل الصفقة";
+  let entry1Hit = trade.entry1Hit || false;
+  let entry2Hit = trade.entry2Hit || false;
+  let tp1Hit = trade.tp1Hit || false;
+  let tp2Hit = trade.tp2Hit || false;
+  let stopHit = trade.stopHit || false;
+
+  if (p <= trade.entry1) entry1Hit = true;
+  if (p <= trade.entry2) entry2Hit = true;
+
+  if (entry1Hit && p <= trade.stop) {
+    stopHit = true;
+    status = "ضرب الستوب";
+  }
+
+  if (entry1Hit && p >= trade.tp1) {
+    tp1Hit = true;
+    status = "حقق الهدف الأول";
+  }
+
+  if (entry1Hit && p >= trade.tp2) {
+    tp2Hit = true;
+    status = "حقق الهدف الثاني";
+  }
+
+  if (entry1Hit && !stopHit && !tp1Hit) status = "داخل الصفقة";
+  if (!entry1Hit) status = "انتظار الدخول";
+
+  if (stopHit && p >= trade.tp1) {
+    status = "ضرب ستوب ثم صعد";
+  }
+
+  return { status, entry1Hit, entry2Hit, tp1Hit, tp2Hit, stopHit };
+}
+
+function saveAnalysisTradesToHistory(coins) {
+  const history = getHistory();
+
+  coins.slice(0, 8).forEach(c => {
+    const setup = tradeSetup(c);
+    const id = `${c.symbol}-${setup.entry1.toFixed(8)}-${setup.stop.toFixed(8)}`;
+
+    const exists = history.some(t => t.id === id);
+    const activeSameSymbol = history.some(t =>
+      t.symbol === c.symbol &&
+      !["حقق الهدف الثاني", "ضرب الستوب", "ضرب ستوب ثم صعد"].includes(t.status)
+    );
+
+    if (exists || activeSameSymbol) return;
+
+    history.push({
+      id,
+      symbol: c.symbol,
+      baseAsset: c.baseAsset,
+      sector: c.sector,
+      createdAt: Date.now(),
+      signal: c.tech?.signal || "فرصة جيدة",
+      reasons: reasonsFor(c),
+      rsi: c.tech?.rsi || "-",
+      entry1: setup.entry1,
+      entry2: setup.entry2,
+      stop: setup.stop,
+      tp1: setup.tp1,
+      tp2: setup.tp2,
+      entry1Hit: true,
+      entry2Hit: false,
+      tp1Hit: false,
+      tp2Hit: false,
+      stopHit: false,
+      status: "داخل الصفقة",
+      startPrice: c.price,
+      lastPrice: c.price
+    });
+  });
+
+  saveHistory(history);
+}
+
+function updateHistoryStatus() {
+  const priceMap = new Map(state.coins.map(c => [c.symbol, c.price]));
+
+  const updated = getHistory().map(t => {
+    const currentPrice = priceMap.get(t.symbol) || t.lastPrice || t.startPrice;
+    const result = getTradeStatusByPrice(t, currentPrice);
+
+    return {
+      ...t,
+      ...result,
+      lastPrice: currentPrice,
+      updatedAt: Date.now()
+    };
+  });
+
+  saveHistory(updated);
+  return updated;
+}
+
+function historyStatusClass(status) {
+  if (status.includes("هدف")) return "status-win";
+  if (status.includes("ستوب")) return "status-loss";
+  if (status.includes("داخل")) return "status-live";
+  return "status-watch";
+}
+
+function renderHistory() {
+  const items = updateHistoryStatus();
+
+  if (!items.length) {
+    els.historyGrid.innerHTML = `<div class="loading-box">لا توجد صفقات محفوظة آخر 7 أيام.</div>`;
+    return;
+  }
+
+  els.historyGrid.innerHTML = items.map(t => `
+    <article class="clean-card analysis-card">
+      <div class="card-top">
+        <div>
+          <h3>${t.baseAsset}</h3>
+          <small>${t.symbol}</small>
+        </div>
+        <span class="rsi-badge">RSI ${t.rsi}</span>
+      </div>
+
+      <div class="analysis-status-row">
+        <span class="signal-pill">${t.signal}</span>
+        <span class="trade-status ${historyStatusClass(t.status)}">${t.status}</span>
+      </div>
+
+      <div class="analysis-levels">
+        <div class="metric-box"><span>الدخول 1</span><strong>${fmtPrice(t.entry1)}</strong></div>
+        <div class="metric-box"><span>الدخول 2</span><strong>${fmtPrice(t.entry2)}</strong></div>
+        <div class="metric-box"><span>الستوب</span><strong>${fmtPrice(t.stop)}</strong></div>
+        <div class="metric-box"><span>الهدف 1</span><strong>${fmtPrice(t.tp1)}</strong></div>
+        <div class="metric-box"><span>الهدف 2</span><strong>${fmtPrice(t.tp2)}</strong></div>
+        <div class="metric-box"><span>آخر سعر</span><strong>${fmtPrice(t.lastPrice)}</strong></div>
+      </div>
+
+      <div class="clean-section">
+        <span class="clean-title">تفاصيل التنفيذ</span>
+        <ul>
+          <li>${t.entry1Hit ? "دخلت من الدخول الأول" : "لم تدخل بعد"}</li>
+          <li>${t.entry2Hit ? "وصلت الدخول الثاني" : "لم تصل الدخول الثاني"}</li>
+          <li>${t.tp1Hit ? "حققت الهدف الأول" : "لم تحقق الهدف الأول"}</li>
+          <li>${t.tp2Hit ? "حققت الهدف الثاني" : "لم تحقق الهدف الثاني"}</li>
+          <li>${t.stopHit ? "لمست الستوب" : "لم تلمس الستوب"}</li>
+        </ul>
+      </div>
+    </article>
+  `).join("");
+}
   renderOpportunities();
 }
 
@@ -611,7 +793,12 @@ els.opportunityGrid.innerHTML = overview.map(buildCard).join("") || `<div class=
 els.breakoutGrid.innerHTML = breakout.map(buildCard).join("") || `<div class="loading-box">لا توجد اختراقات حالياً</div>`;
   els.reversalGrid.innerHTML = reversal.map(buildCard).join("") || `<div class="loading-box">لا توجد انعكاسات حالياً</div>`;
   els.signalsGrid.innerHTML = signals.map(buildCard).join("") || `<div class="loading-box">لا توجد إشارات حالياً</div>`;
-  els.analysisGrid.innerHTML = arr.slice(0,8).map(buildAnalysisCard).join("") || `<div class="loading-box">لا توجد توصيات حالياً</div>`;
+  const analysisCoins = arr.slice(0, 8);
+
+els.analysisGrid.innerHTML = analysisCoins.map(buildAnalysisCard).join("") || `<div class="loading-box">لا توجد توصيات حالياً</div>`;
+
+saveAnalysisTradesToHistory(analysisCoins);
+renderHistory();
 }
 
 async function loadWhales(){
@@ -658,12 +845,16 @@ document.querySelectorAll(".sub-tab").forEach(btn=>{
     document.querySelectorAll(".sub-panel").forEach(p=>p.classList.remove("active"));
     btn.classList.add("active");
     document.getElementById(btn.dataset.subtab+"Sub").classList.add("active");
+    if (btn.dataset.subtab === "history") {
+  renderHistory();
+}
     const desc = {
   overview: "أفضل الفرص العامة في السوق",
   breakout: "اختراقات قوية + زخم + سيولة",
   reversal: "انعكاسات محتملة + RSI منخفض + دعم",
   signals: "إشارات سريعة حسب النشاط والزخم",
   analysis: "دخول + اهداف + ستوب + دعم الحيتان"
+  history: "نتائج الصفقات السابقة خلال اخر اسبوع"
 };
 
 document.getElementById("subtabDescription").textContent = desc[btn.dataset.subtab];
