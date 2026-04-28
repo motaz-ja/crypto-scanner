@@ -492,39 +492,48 @@ function buildCard(c, i){
 
 function tradeSetup(c){
   const p = n(c.price);
-  const isBreakout = c.tech?.breakout || c.change > 5;
-  const rsiLow = c.tech?.rsi && c.tech.rsi < 45;
+  const rsi = c.tech?.rsi || 50;
+  const isBreakout = c.tech?.breakout || c.change > 6;
+  const isReversal = c.tech?.reversal || rsi < 42;
 
-  let entry1 = isBreakout ? p * 0.995 : p * 0.99;
-  let entry2 = isBreakout ? p * 0.975 : p * 0.965;
-  let stop = isBreakout ? p * 0.945 : p * 0.935;
+  let entry1, entry2, stop, tp1, tp2;
 
-  const maxStopDistance = 0.075;
-  if ((entry1 - stop) / entry1 > maxStopDistance) stop = entry1 * (1 - maxStopDistance);
+  if (isBreakout) {
+    // اختراق: ننتظر إعادة اختبار بسيطة بدل الدخول من القمة
+    entry1 = p * 0.985;
+    entry2 = p * 0.965;
+    stop   = p * 0.935;
+  } else if (isReversal) {
+    // ارتداد: دخول تدريجي وستوب منطقي
+    entry1 = p * 0.990;
+    entry2 = p * 0.970;
+    stop   = p * 0.940;
+  } else {
+    // فرصة عادية: دخول محافظ
+    entry1 = p * 0.988;
+    entry2 = p * 0.968;
+    stop   = p * 0.938;
+  }
+
+  // لا نسمح بستوب فلكي أكثر من 6.5%
+  const maxRisk = 0.065;
+  if ((entry1 - stop) / entry1 > maxRisk) {
+    stop = entry1 * (1 - maxRisk);
+  }
 
   const risk = entry1 - stop;
-  let tp1 = entry1 + risk * 1.35;
-  let tp2 = entry1 + risk * 2.15;
 
-  if (rsiLow && !isBreakout) {
-    entry1 = p * 0.985;
-    entry2 = p * 0.955;
-    stop = p * 0.925;
-    const r = entry1 - stop;
-    tp1 = entry1 + r * 1.25;
-    tp2 = entry1 + r * 2.0;
+  // أهداف منطقية حسب المخاطرة
+  tp1 = entry1 + risk * 1.25;
+  tp2 = entry1 + risk * 2.0;
+
+  // لو العملة طالعة كثير، نقلل الطمع
+  if (c.change > 10) {
+    tp1 = entry1 + risk * 1.05;
+    tp2 = entry1 + risk * 1.65;
   }
 
-  if (c.change > 12) {
-    entry1 = p * 0.985;
-    entry2 = p * 0.955;
-    stop = p * 0.925;
-    const r = entry1 - stop;
-    tp1 = entry1 + r * 1.35;
-    tp2 = entry1 + r * 2.2;
-  }
-
-  let status = "مراقبة";
+  let status = "انتظار الدخول";
   if (p <= stop) status = "ضرب الستوب";
   else if (p >= tp2) status = "حقق الهدف الثاني";
   else if (p >= tp1) status = "حقق الهدف الأول";
@@ -707,7 +716,7 @@ function historyStatusClass(status) {
   if (t.tp2Hit) return ((t.tp2 - t.entry1) / t.entry1) * 100;
   if (t.tp1Hit) return ((t.tp1 - t.entry1) / t.entry1) * 100;
   if (t.stopHit) return ((t.stop - t.entry1) / t.entry1) * 100;
-  return ((t.lastPrice - t.entry1) / t.entry1) * 100;
+  return null; // الصفقة لسه ما انتهت
 }
 
 function renderHistoryStats(items) {
@@ -719,8 +728,9 @@ function renderHistoryStats(items) {
   const tp2 = items.filter(t => t.tp2Hit).length;
 
   const winRate = total ? ((wins / total) * 100).toFixed(1) : "0.0";
-  const totalPnl = items.reduce((sum, t) => sum + getTradePnl(t), 0);
-
+  const closedTrades = items.filter(t => getTradePnl(t) !== null);
+const totalPnl = closedTrades.reduce((sum, t) => sum + getTradePnl(t), 0);
+  
   const box = document.getElementById("historyStats");
   if (!box) return;
 
@@ -763,8 +773,13 @@ renderHistoryStats(items);
         <div class="metric-box"><span>الهدف 1</span><strong>${fmtPrice(t.tp1)}</strong></div>
         <div class="metric-box"><span>الهدف 2</span><strong>${fmtPrice(t.tp2)}</strong></div>
         <div class="metric-box"><span>آخر سعر</span><strong>${fmtPrice(t.lastPrice)}</strong></div>
-        <div class="metric-box"><span>النتيجة</span><strong class="${getTradePnl(t) >= 0 ? "green" : "red"}">${getTradePnl(t).toFixed(2)}%</strong></div>
-      </div>
+        ${getTradePnl(t) !== null ? `
+  <div class="metric-box">
+    <span>النتيجة</span>
+    <strong class="${getTradePnl(t) >= 0 ? "green" : "red"}">${getTradePnl(t).toFixed(2)}%</strong>
+  </div>
+` : ""}
+    
 
       <div class="clean-section">
         <span class="clean-title">تفاصيل التنفيذ</span>
@@ -784,11 +799,11 @@ function renderOpportunities(){
   const arr = state.enriched;
 
   const breakout = arr
-    .filter(c => c.tech?.breakout || (c.change > 3 && c.volume > 5000000 && c.trades > 30000))
+    .filter(c => c.tech?.breakout || (c.change > 4 && c.volume > 800000 && c.trades > 30000))
     .slice(0, 8);
 
   const reversal = arr
-    .filter(c => c.tech?.reversal || (c.tech?.rsi && c.tech.rsi < 48))
+    .filter(c => c.tech?.reversal || (c.tech?.rsi && c.tech.rsi < 42))
     .slice(0, 8);
 
   const signals = arr
