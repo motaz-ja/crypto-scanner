@@ -786,23 +786,23 @@ renderHistoryStats(items);
 
   <div class="execution-badges">
     <span class="exec-badge ${t.entry1Hit ? "done" : "wait"}">
-      ${t.entry1Hit ? "✅ دخول 1" : "⏳ دخول 1"}
+       ${t.entry1Hit ? "دخول 1 ✔" : "دخول 1 ⏳"}
     </span>
 
     <span class="exec-badge ${t.entry2Hit ? "done" : "wait"}">
-      ${t.entry2Hit ? "✅ دخول 2" : "⏳ دخول 2"}
+     ${t.entry2Hit ? "دخول 2 ✔" : "دخول 2 ⏳"}
     </span>
 
     <span class="exec-badge ${t.tp1Hit ? "win" : "wait"}">
-      ${t.tp1Hit ? "🎯 TP1" : "⏳ TP1"}
+       ${t.tp1Hit ? "TP1 🎯" : "TP1 ⏳"}
     </span>
 
     <span class="exec-badge ${t.tp2Hit ? "win" : "wait"}">
-      ${t.tp2Hit ? "🚀 TP2" : "⏳ TP2"}
+       ${t.tp2Hit ? "TP2 🎯" : "TP2 ⏳"}
     </span>
 
     <span class="exec-badge ${t.stopHit ? "loss" : "safe"}">
-      ${t.stopHit ? "🛑 Stop" : "🛡️ Safe"}
+      ${t.stopHit ? "Stop ❌" : "Safe 🛡"}
     </span>
   </div>
 </div>
