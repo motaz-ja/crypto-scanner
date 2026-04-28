@@ -115,6 +115,7 @@
   </div>
       
   <div id="historySub" class="sub-panel">
+  <div id="historyStats" class="history-stats"></div>
   <div id="historyGrid" class="cards"></div>
 </div>
     </section>
@@ -702,9 +703,42 @@ function historyStatusClass(status) {
   return "status-watch";
 }
 
+  function getTradePnl(t) {
+  if (t.tp2Hit) return ((t.tp2 - t.entry1) / t.entry1) * 100;
+  if (t.tp1Hit) return ((t.tp1 - t.entry1) / t.entry1) * 100;
+  if (t.stopHit) return ((t.stop - t.entry1) / t.entry1) * 100;
+  return ((t.lastPrice - t.entry1) / t.entry1) * 100;
+}
+
+function renderHistoryStats(items) {
+  const total = items.length;
+  const wins = items.filter(t => t.tp1Hit || t.tp2Hit).length;
+  const losses = items.filter(t => t.stopHit && !t.tp1Hit && !t.tp2Hit).length;
+  const live = items.filter(t => t.status.includes("داخل") || t.status.includes("انتظار")).length;
+  const tp1 = items.filter(t => t.tp1Hit).length;
+  const tp2 = items.filter(t => t.tp2Hit).length;
+
+  const winRate = total ? ((wins / total) * 100).toFixed(1) : "0.0";
+  const totalPnl = items.reduce((sum, t) => sum + getTradePnl(t), 0);
+
+  const box = document.getElementById("historyStats");
+  if (!box) return;
+
+  box.innerHTML = `
+    <div><span>عدد الصفقات</span><strong>${total}</strong></div>
+    <div><span>TP1</span><strong class="green">${tp1}</strong></div>
+    <div><span>TP2</span><strong class="green">${tp2}</strong></div>
+    <div><span>Stop</span><strong class="red">${losses}</strong></div>
+    <div><span>الشغالة</span><strong>${live}</strong></div>
+    <div><span>Win Rate</span><strong>${winRate}%</strong></div>
+    <div><span>Total PnL</span><strong class="${totalPnl >= 0 ? "green" : "red"}">${totalPnl.toFixed(2)}%</strong></div>
+  `;
+}
+  
 function renderHistory() {
   const items = updateHistoryStatus();
-
+renderHistoryStats(items);
+  
   if (!items.length) {
     els.historyGrid.innerHTML = `<div class="loading-box">لا توجد صفقات محفوظة آخر 7 أيام.</div>`;
     return;
@@ -729,6 +763,7 @@ function renderHistory() {
         <div class="metric-box"><span>الهدف 1</span><strong>${fmtPrice(t.tp1)}</strong></div>
         <div class="metric-box"><span>الهدف 2</span><strong>${fmtPrice(t.tp2)}</strong></div>
         <div class="metric-box"><span>آخر سعر</span><strong>${fmtPrice(t.lastPrice)}</strong></div>
+        <div class="metric-box"><span>النتيجة</span><strong class="${getTradePnl(t) >= 0 ? "green" : "red"}">${getTradePnl(t).toFixed(2)}%</strong></div>
       </div>
 
       <div class="clean-section">
@@ -786,29 +821,63 @@ function renderOpportunities(){
   renderHistory();
 }
 
-async function loadWhales(){
-  els.whaleFeed.innerHTML = `<div class="loading-box">جاري تحميل الحيتان...</div>`;
-  try {
-    const r = await fetch(WHALE_FLOW_URL);
-    const data = await r.json();
-    state.whales = data.flows || [];
-    els.whaleFeed.innerHTML = state.whales.map(w=>`
-      <article class="clean-card">
-        <h3>${w.symbol}</h3>
-        <div class="mini-grid">
-          <div><span>الكمية</span><strong>${fmtNum(w.amount)}</strong></div>
-          <div><span>الاتجاه</span><strong class="${w.flowType==="bullish"?"green":"red"}">${w.flowType==="bullish"?"تجميع":"ضغط بيع"}</strong></div>
-          <div><span>من</span><strong>${w.fromLabel}</strong></div>
-          <div><span>إلى</span><strong>${w.toLabel}</strong></div>
-        </div>
-        <p>${w.note}</p>
-      </article>
-    `).join("") || `<div class="loading-box">لا توجد تدفقات حالياً</div>`;
+function detectWhales(){
+  return state.coins
+    .filter(c =>
+      c.volume > 8000000 &&
+      c.trades > 40000 &&
+      Math.abs(c.change) > 1.5
+    )
+    .sort((a,b)=>b.volume-a.volume)
+    .slice(0, 12)
+    .map(c => {
+      const flowType = c.change >= 0 ? "bullish" : "bearish";
 
-    if (state.enriched.length) renderOpportunities();
-  } catch {
-    els.whaleFeed.innerHTML = `<div class="loading-box">فشل تحميل الحيتان</div>`;
+      return {
+        symbol: c.baseAsset,
+        amount: c.volume,
+        trades: c.trades,
+        change: c.change,
+        sector: c.sector,
+        flowType,
+        strength: Math.min(100, Math.round((c.volume / 1000000) + (c.trades / 1000)))
+      };
+    });
+}
+
+function loadWhales(){
+  const whales = detectWhales();
+  state.whales = whales;
+
+  if (!whales.length) {
+    els.whaleFeed.innerHTML = `<div class="loading-box">لا توجد حركة حيتان واضحة الآن.</div>`;
+    return;
   }
+
+  els.whaleFeed.innerHTML = whales.map(w=>`
+    <article class="clean-card">
+      <h3>${w.symbol}</h3>
+
+      <div class="mini-grid">
+        <div><span>السيولة</span><strong>${fmtMoney(w.amount)}</strong></div>
+        <div><span>الصفقات</span><strong>${fmtNum(w.trades)}</strong></div>
+        <div><span>24h</span><strong class="${w.change >= 0 ? "green" : "red"}">${w.change.toFixed(2)}%</strong></div>
+        <div><span>الاتجاه</span><strong class="${w.flowType==="bullish"?"green":"red"}">${w.flowType==="bullish"?"تجميع":"تصريف"}</strong></div>
+        <div><span>القوة</span><strong>${w.strength}%</strong></div>
+        <div><span>القطاع</span><strong>${w.sector}</strong></div>
+      </div>
+
+      <p>
+        ${
+          w.flowType==="bullish"
+          ? "نشاط قوي مع صعود وسيولة عالية، احتمال تجميع أو دخول أموال ذكية."
+          : "نشاط قوي مع هبوط وسيولة عالية، احتمال تصريف أو ضغط بيع."
+        }
+      </p>
+    </article>
+  `).join("");
+
+  if (state.enriched.length) renderOpportunities();
 }
 
 function renderAll(){
