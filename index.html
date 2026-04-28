@@ -830,16 +830,29 @@ function renderOpportunities(){
     .slice(0, 8);
 
   const analysisCoins = arr
-    .filter(c => 
+  .filter(c => {
+    const setup = tradeSetup(c);
+    const riskPct = ((setup.entry1 - setup.stop) / setup.entry1) * 100;
+    const rewardPct = ((setup.tp1 - setup.entry1) / setup.entry1) * 100;
+    const rr = rewardPct / riskPct;
+
+    const priceNearEntry = c.price <= setup.entry1 * 1.025;
+    const notOverPumped = c.change < 12;
+    const strongLiquidity = c.volume > 8000000 && c.trades > 40000;
+    const rsiOk = !c.tech?.rsi || c.tech.rsi < 72;
+    const hasSignal = c.tech?.breakout || c.tech?.reversal || c.tech?.rsi < 42;
+
+    return (
       c.tech &&
-      (
-        c.tech.breakout ||
-        c.tech.reversal ||
-        c.tech.rsi < 45 ||
-        (c.change > 2 && c.volume > 300000)
-      )
-    )
-    .slice(0, 8);
+      hasSignal &&
+      strongLiquidity &&
+      priceNearEntry &&
+      notOverPumped &&
+      rsiOk &&
+      rr >= 1.2
+    );
+  })
+  .slice(0, 6);
 
   els.opportunityGrid.innerHTML = overview.map(buildCard).join("") || `<div class="loading-box">لا توجد فرص حالياً</div>`;
   els.breakoutGrid.innerHTML = breakout.map(buildCard).join("") || `<div class="loading-box">لا توجد اختراقات حالياً</div>`;
