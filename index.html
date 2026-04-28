@@ -688,7 +688,7 @@ function updateHistoryStatus() {
       ...t,
       ...result,
       lastPrice: currentPrice,
-      updatedAt: Date.now()
+      updatedAt: Math.floor(Date.now() / 60000)
     };
   });
 
