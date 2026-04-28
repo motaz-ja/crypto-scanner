@@ -248,8 +248,8 @@ td small {
 .grid,
 .cards {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 16px;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 18px;
 }
 
 .clean-card {
@@ -860,4 +860,49 @@ td small {
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.execution-box {
+  background: rgba(255,255,255,0.04);
+  border-radius: 12px;
+  padding: 12px;
+  margin-top: 12px;
+}
+
+.execution-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.exec-badge {
+  padding: 6px 10px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: bold;
+  border: 1px solid rgba(255,255,255,0.1);
+}
+
+.exec-badge.done {
+  background: rgba(0,255,150,0.15);
+  color: #00ffa2;
+}
+
+.exec-badge.win {
+  background: rgba(0,200,255,0.15);
+  color: #00d4ff;
+}
+
+.exec-badge.loss {
+  background: rgba(255,50,50,0.2);
+  color: #ff4d4d;
+}
+
+.exec-badge.safe {
+  background: rgba(100,200,255,0.15);
+  color: #6fdcff;
+}
+
+.exec-badge.wait {
+  opacity: 0.5;
 }
