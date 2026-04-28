@@ -781,16 +781,31 @@ renderHistoryStats(items);
 ` : ""}
     
 
-      <div class="clean-section">
-        <span class="clean-title">تفاصيل التنفيذ</span>
-        <ul>
-          <li>${t.entry1Hit ? "دخلت من الدخول الأول" : "لم تدخل بعد"}</li>
-          <li>${t.entry2Hit ? "وصلت الدخول الثاني" : "لم تصل الدخول الثاني"}</li>
-          <li>${t.tp1Hit ? "حققت الهدف الأول" : "لم تحقق الهدف الأول"}</li>
-          <li>${t.tp2Hit ? "حققت الهدف الثاني" : "لم تحقق الهدف الثاني"}</li>
-          <li>${t.stopHit ? "لمست الستوب" : "لم تلمس الستوب"}</li>
-        </ul>
-      </div>
+     <div class="clean-section execution-box">
+  <span class="clean-title">تفاصيل التنفيذ</span>
+
+  <div class="execution-badges">
+    <span class="exec-badge ${t.entry1Hit ? "done" : "wait"}">
+      ${t.entry1Hit ? "✅ دخول 1" : "⏳ دخول 1"}
+    </span>
+
+    <span class="exec-badge ${t.entry2Hit ? "done" : "wait"}">
+      ${t.entry2Hit ? "✅ دخول 2" : "⏳ دخول 2"}
+    </span>
+
+    <span class="exec-badge ${t.tp1Hit ? "win" : "wait"}">
+      ${t.tp1Hit ? "🎯 TP1" : "⏳ TP1"}
+    </span>
+
+    <span class="exec-badge ${t.tp2Hit ? "win" : "wait"}">
+      ${t.tp2Hit ? "🚀 TP2" : "⏳ TP2"}
+    </span>
+
+    <span class="exec-badge ${t.stopHit ? "loss" : "safe"}">
+      ${t.stopHit ? "🛑 Stop" : "🛡️ Safe"}
+    </span>
+  </div>
+</div>
     </article>
   `).join("");
 }
