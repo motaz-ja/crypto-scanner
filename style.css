@@ -260,13 +260,13 @@ td small {
 }
 
 .clean-card h3 {
-  font-size: 22px;
+  font-size: 24px;
   margin-bottom: 4px;
-  line-height: 1;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 130px;
+  line-height: 1.05;
+  white-space: normal;
+  overflow: visible;
+  text-overflow: unset;
+  max-width: none;
 }
 
 .clean-card small {
@@ -274,11 +274,16 @@ td small {
 }
 
 .card-top {
-  display: flex;
+  display: grid;
+  grid-template-columns: 72px 1fr 56px;
   align-items: center;
-  justify-content: space-between;
   gap: 12px;
   margin-bottom: 16px;
+}
+
+.card-top > div {
+  min-width: 0;
+  text-align: center;
 }
 
 .rank-badge {
