@@ -830,28 +830,44 @@ function renderOpportunities(){
     .slice(0, 8);
 
   const analysisCoins = arr
-  .filter(c => {
+  .map(c => {
     const setup = tradeSetup(c);
+
     const riskPct = ((setup.entry1 - setup.stop) / setup.entry1) * 100;
     const rewardPct = ((setup.tp1 - setup.entry1) / setup.entry1) * 100;
     const rr = rewardPct / riskPct;
 
-    const priceNearEntry = c.price <= setup.entry1 * 1.025;
-    const notOverPumped = c.change < 12;
-    const strongLiquidity = c.volume > 8000000 && c.trades > 40000;
-    const rsiOk = !c.tech?.rsi || c.tech.rsi < 72;
-    const hasSignal = c.tech?.breakout || c.tech?.reversal || c.tech?.rsi < 42;
+    const distanceToEntry = Math.abs((c.price - setup.entry1) / setup.entry1) * 100;
 
-    return (
-      c.tech &&
-      hasSignal &&
-      strongLiquidity &&
-      priceNearEntry &&
-      notOverPumped &&
-      rsiOk &&
-      rr >= 1.2
-    );
+    const liquidityScore =
+      (c.volume > 10000000 ? 2 : c.volume > 5000000 ? 1 : 0) +
+      (c.trades > 60000 ? 2 : c.trades > 30000 ? 1 : 0);
+
+    const setupScore =
+      (c.tech?.reversal ? 2 : 0) +
+      (c.tech?.breakout ? 1 : 0) +
+      (c.tech?.rsi && c.tech.rsi < 45 ? 1 : 0) +
+      (distanceToEntry <= 2.5 ? 2 : distanceToEntry <= 5 ? 1 : 0) +
+      (rr >= 1.4 ? 2 : rr >= 1.15 ? 1 : 0) +
+      (c.change < 10 ? 1 : 0);
+
+    return {
+      ...c,
+      qualityScore: liquidityScore + setupScore,
+      setupRR: rr,
+      distanceToEntry
+    };
   })
+  .filter(c =>
+    c.tech &&
+    c.qualityScore >= 6 &&
+    c.setupRR >= 1.15 &&
+    c.distanceToEntry <= 5 &&
+    c.change < 12 &&
+    c.volume > 3000000 &&
+    c.trades > 15000
+  )
+  .sort((a,b) => b.qualityScore - a.qualityScore)
   .slice(0, 6);
 
   els.opportunityGrid.innerHTML = overview.map(buildCard).join("") || `<div class="loading-box">لا توجد فرص حالياً</div>`;
