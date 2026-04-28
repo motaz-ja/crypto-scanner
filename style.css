@@ -840,3 +840,24 @@ td small {
 .exec-badge.loss {
   background: linear-gradient(135deg, rgba(239,68,68,0.25), rgba(239,68,68,0.1));
 }
+
+.coin-card h3,
+.clean-card h3 {
+  word-break: break-word;
+  overflow-wrap: anywhere;
+  line-height: 1.05;
+  font-size: clamp(20px, 2vw, 28px);
+}
+
+.coin-card small,
+.clean-card small {
+  word-break: break-word;
+  overflow-wrap: anywhere;
+  font-size: 12px;
+}
+
+.exec-badge {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
