@@ -260,8 +260,13 @@ td small {
 }
 
 .clean-card h3 {
-  font-size: 28px;
+  font-size: 22px;
   margin-bottom: 4px;
+  line-height: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 130px;
 }
 
 .clean-card small {
