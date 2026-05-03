@@ -985,6 +985,9 @@ function renderOpportunities(){
   els.analysisGrid.innerHTML = analysisCoins.map(buildAnalysisCard).join("") || `<div class="loading-box">لا توجد توصيات حالياً</div>`;
 
   saveAnalysisTradesToHistory(analysisCoins);
+  const activeSubtab = document.querySelector(".subtab-btn.active")?.dataset.subtab;
+
+if (activeSubtab === "history") {
   renderHistory();
 }
 
@@ -1069,7 +1072,9 @@ document.querySelectorAll(".sub-tab").forEach(btn=>{
     btn.classList.add("active");
     document.getElementById(btn.dataset.subtab+"Sub").classList.add("active");
 
-    if (btn.dataset.subtab === "history") renderHistory();
+   if (btn.dataset.subtab === "history") {
+  renderHistory();
+};
 
     const desc = {
       overview: "أفضل الفرص العامة في السوق",
