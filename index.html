@@ -746,6 +746,73 @@ async function updateHistoryStatus() {
   return history;
 }
 
+  async function updateHistoryStatusFromCandles() {
+  const history = getHistory();
+
+  const updated = await Promise.all(history.map(async (t) => {
+    let currentPrice = t.lastPrice || t.startPrice;
+
+    try {
+      const startTime = t.createdAt || Date.now() - 24 * 60 * 60 * 1000;
+      const res = await fetch(`${KLINES_URL}?symbol=${t.symbol}&interval=5m&startTime=${startTime}&limit=1000`);
+      const candles = await res.json();
+
+      let entry1Hit = t.entry1Hit || false;
+      let entry2Hit = t.entry2Hit || false;
+      let tp1Hit = t.tp1Hit || false;
+      let tp2Hit = t.tp2Hit || false;
+      let stopHit = t.stopHit || false;
+      let status = t.status || "انتظار الدخول";
+
+      candles.forEach(k => {
+        const high = Number(k[2]);
+        const low = Number(k[3]);
+        const close = Number(k[4]);
+        currentPrice = close || currentPrice;
+
+        if (!entry1Hit && low <= t.entry1) entry1Hit = true;
+        if (!entry2Hit && low <= t.entry2) entry2Hit = true;
+
+        if (entry1Hit && !tp1Hit && high >= t.tp1) {
+          tp1Hit = true;
+          status = "حقق الهدف الأول";
+        }
+
+        if (entry1Hit && !tp2Hit && high >= t.tp2) {
+          tp2Hit = true;
+          status = "حقق الهدف الثاني";
+        }
+
+        if (entry1Hit && !tp1Hit && !stopHit && low <= t.stop) {
+          stopHit = true;
+          status = "ضرب الستوب";
+        }
+      });
+
+      if (entry1Hit && !tp1Hit && !tp2Hit && !stopHit) status = "داخل الصفقة";
+      if (!entry1Hit) status = "انتظار الدخول";
+
+      return {
+        ...t,
+        entry1Hit,
+        entry2Hit,
+        tp1Hit,
+        tp2Hit,
+        stopHit,
+        status,
+        lastPrice: currentPrice,
+        updatedAt: Date.now()
+      };
+
+    } catch (e) {
+      return t;
+    }
+  }));
+
+  saveHistory(updated);
+  return updated;
+}
+  
 function historyStatusClass(status) {
   if (status.includes("هدف")) return "status-win";
   if (status.includes("ستوب")) return "status-loss";
@@ -787,7 +854,7 @@ const totalPnl = closedTrades.reduce((sum, t) => sum + getTradePnl(t), 0);
 }
   
  async function renderHistory() {
-  const items = await updateHistoryStatus();
+ const items = await updateHistoryStatusFromCandles();
 renderHistoryStats(items);
   
   if (!items.length) {
