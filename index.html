@@ -687,31 +687,63 @@ function saveAnalysisTradesToHistory(coins) {
 }
 
 async function updateHistoryStatus() {
+
   const history = getHistory();
 
-  const updated = await Promise.all(history.map(async (t) => {
-    let currentPrice = t.lastPrice || t.startPrice;
+  for (let t of history) {
 
     try {
-      const r = await fetch(`${TICKER_URL}?symbol=${t.symbol}`);
-      const data = await r.json();
-      currentPrice = Number(data.lastPrice || currentPrice);
+      const symbol = t.symbol;
+      const interval = "5m";
+
+      // نجيب 200 شمعة من بايننس
+      const res = await fetch(`https://api.binance.com/api/v3/klines?symbol=${symbol}&interval=${interval}&limit=200`);
+      const data = await res.json();
+
+      let hitTP1 = false;
+      let hitTP2 = false;
+      let hitSL = false;
+
+      for (let k of data) {
+
+        const high = parseFloat(k[2]);
+        const low  = parseFloat(k[3]);
+
+        // ✅ تحقق من الستوب اول
+        if (low <= t.stop) {
+          hitSL = true;
+          break;
+        }
+
+        // ✅ تحقق من الهدف 1
+        if (!hitTP1 && high >= t.tp1) {
+          hitTP1 = true;
+        }
+
+        // ✅ تحقق من الهدف 2
+        if (!hitTP2 && high >= t.tp2) {
+          hitTP2 = true;
+        }
+      }
+
+      // ✅ تحديث الحالة
+      if (hitSL) {
+        t.status = "ستوب";
+      } else if (hitTP2) {
+        t.status = "هدف 2";
+      } else if (hitTP1) {
+        t.status = "هدف 1";
+      } else {
+        t.status = "شغالة";
+      }
+
     } catch (e) {
-      currentPrice = t.lastPrice || t.startPrice;
+      console.log("error updating", t.symbol);
     }
+  }
 
-    const result = getTradeStatusByPrice(t, currentPrice);
-
-    return {
-      ...t,
-      ...result,
-      lastPrice: currentPrice,
-      updatedAt: Date.now()
-    };
-  }));
-
-  saveHistory(updated);
-  return updated;
+  saveHistory(history);
+  return history;
 }
 
 function historyStatusClass(status) {
