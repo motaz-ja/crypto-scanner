@@ -697,7 +697,8 @@ async function updateHistoryStatus() {
       const interval = "5m";
 
       // نجيب 200 شمعة من بايننس
-      const res = await fetch(`https://api.binance.com/api/v3/klines?symbol=${symbol}&interval=${interval}&limit=200`);
+      const startTime = t.createdAt || Date.now() - 24 * 60 * 60 * 1000;
+const res = await fetch(`https://api.binance.com/api/v3/klines?symbol=${symbol}&interval=${interval}&startTime=${startTime}&limit=1000`);
       const data = await res.json();
 
       let hitTP1 = false;
