@@ -524,13 +524,13 @@ function tradeSetup(c){
   const risk = entry1 - stop;
 
   // أهداف منطقية حسب المخاطرة
-  tp1 = entry1 + risk * 1.25;
-  tp2 = entry1 + risk * 2.0;
+  tp1 = entry1 + risk * 1;
+  tp2 = entry1 + risk * 1.5;
 
   // لو العملة طالعة كثير، نقلل الطمع
   if (c.change > 10) {
-    tp1 = entry1 + risk * 1.05;
-    tp2 = entry1 + risk * 1.65;
+    tp1 = entry1 + risk * 1.0;
+    tp2 = entry1 + risk * 1.25;
   }
 
   let status = "انتظار الدخول";
@@ -686,20 +686,29 @@ function saveAnalysisTradesToHistory(coins) {
   saveHistory(history);
 }
 
-function updateHistoryStatus() {
-  const priceMap = new Map(state.coins.map(c => [c.symbol, c.price]));
+async function updateHistoryStatus() {
+  const history = getHistory();
 
-  const updated = getHistory().map(t => {
-    const currentPrice = priceMap.get(t.symbol) || t.lastPrice || t.startPrice;
+  const updated = await Promise.all(history.map(async (t) => {
+    let currentPrice = t.lastPrice || t.startPrice;
+
+    try {
+      const r = await fetch(`${TICKER_URL}?symbol=${t.symbol}`);
+      const data = await r.json();
+      currentPrice = Number(data.lastPrice || currentPrice);
+    } catch (e) {
+      currentPrice = t.lastPrice || t.startPrice;
+    }
+
     const result = getTradeStatusByPrice(t, currentPrice);
 
     return {
       ...t,
       ...result,
       lastPrice: currentPrice,
-      updatedAt: Math.floor(Date.now() / 60000)
+      updatedAt: Date.now()
     };
-  });
+  }));
 
   saveHistory(updated);
   return updated;
@@ -745,8 +754,8 @@ const totalPnl = closedTrades.reduce((sum, t) => sum + getTradePnl(t), 0);
   `;
 }
   
-function renderHistory() {
-  const items = updateHistoryStatus();
+ async function renderHistory() {
+  const items = await updateHistoryStatus();
 renderHistoryStats(items);
   
   if (!items.length) {
