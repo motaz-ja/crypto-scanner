@@ -870,11 +870,11 @@ function renderOpportunities(){
   .filter(c =>
     c.tech &&
     c.qualityScore >= 6 &&
-    c.setupRR >= 1.15 &&
+    c.setupRR >= 1 &&
     c.distanceToEntry <= 7 &&
     c.change < 12 &&
     c.volume > 3000000 &&
-    c.trades > 15000
+    c.trades > 10000
   )
   .sort((a,b) => b.qualityScore - a.qualityScore)
   .slice(0, 6);
