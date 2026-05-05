@@ -881,15 +881,15 @@ renderHistoryStats(items);
         <div class="metric-box"><span>الهدف 1</span><strong>${fmtPrice(t.tp1)}</strong></div>
         <div class="metric-box"><span>الهدف 2</span><strong>${fmtPrice(t.tp2)}</strong></div>
         <div class="metric-box"><span>آخر سعر</span><strong>${fmtPrice(t.lastPrice)}</strong></div>
-        ${getTradePnl(t) !== null ? `
+       ${getTradePnl(t) !== null ? `
   <div class="metric-box">
     <span>النتيجة</span>
     <strong class="${getTradePnl(t) >= 0 ? "green" : "red"}">${getTradePnl(t).toFixed(2)}%</strong>
   </div>
 ` : ""}
-    
+      </div>
 
-     <div class="clean-section execution-box">
+      <div class="clean-section execution-box">
   <span class="clean-title">تفاصيل التنفيذ</span>
 
   <div class="execution-badges">
@@ -985,10 +985,12 @@ function renderOpportunities(){
   els.analysisGrid.innerHTML = analysisCoins.map(buildAnalysisCard).join("") || `<div class="loading-box">لا توجد توصيات حالياً</div>`;
 
   saveAnalysisTradesToHistory(analysisCoins);
-  const activeSubtab = document.querySelector(".subtab-btn.active")?.dataset.subtab;
+  const activeSubtab = document.querySelector(".sub-tab.active")?.dataset.subtab;
 
 if (activeSubtab === "history") {
   renderHistory();
+}
+
 }
 
 function detectWhales(){
