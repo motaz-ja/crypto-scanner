@@ -798,7 +798,7 @@ async function updateHistoryStatus() {
   return history;
 }
 
-  async function updateHistoryStatusFromCandles() {
+ async function updateHistoryStatusFromCandles() {
   const history = getHistory();
 
   const updated = await Promise.all(history.map(async (t) => {
@@ -825,24 +825,32 @@ async function updateHistoryStatus() {
         if (!entry1Hit && low <= t.entry1) entry1Hit = true;
         if (!entry2Hit && low <= t.entry2) entry2Hit = true;
 
+        // الستوب فقط قبل تحقيق أي هدف
+        if (entry1Hit && !tp1Hit && !tp2Hit && !stopHit && low <= t.stop) {
+          stopHit = true;
+          status = "ضرب الستوب";
+          return;
+        }
+
+        // الهدف الأول يلغي فكرة الخسارة بعده
         if (entry1Hit && !tp1Hit && high >= t.tp1) {
           tp1Hit = true;
+          stopHit = false;
           status = "حقق الهدف الأول";
         }
 
         if (entry1Hit && !tp2Hit && high >= t.tp2) {
           tp2Hit = true;
+          stopHit = false;
           status = "حقق الهدف الثاني";
-        }
-
-        if (entry1Hit && !tp1Hit && !stopHit && low <= t.stop) {
-          stopHit = true;
-          status = "ضرب الستوب";
         }
       });
 
-      if (entry1Hit && !tp1Hit && !tp2Hit && !stopHit) status = "داخل الصفقة";
-      if (!entry1Hit) status = "انتظار الدخول";
+      if (tp2Hit) status = "حقق الهدف الثاني";
+      else if (tp1Hit) status = "حقق الهدف الأول";
+      else if (stopHit) status = "ضرب الستوب";
+      else if (entry1Hit) status = "داخل الصفقة";
+      else status = "انتظار الدخول";
 
       return {
         ...t,
