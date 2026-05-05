@@ -880,11 +880,26 @@ function historyStatusClass(status) {
   return "status-watch";
 }
 
-  function getTradePnl(t) {
-  if (t.tp2Hit) return ((t.tp2 - t.entry1) / t.entry1) * 100;
-  if (t.tp1Hit) return ((t.tp1 - t.entry1) / t.entry1) * 100;
-  if (t.stopHit) return ((t.stop - t.entry1) / t.entry1) * 100;
-  return null; // الصفقة لسه ما انتهت
+  function getAverageEntry(t) {
+  const entries = [];
+
+  if (t.entry1Hit) entries.push(Number(t.entry1));
+  if (t.entry2Hit) entries.push(Number(t.entry2));
+
+  if (!entries.length) return null;
+
+  return entries.reduce((sum, v) => sum + v, 0) / entries.length;
+}
+  
+ function getTradePnl(t) {
+  const avgEntry = getAverageEntry(t);
+  if (!avgEntry) return null;
+
+  if (t.tp2Hit) return ((t.tp2 - avgEntry) / avgEntry) * 100;
+  if (t.tp1Hit) return ((t.tp1 - avgEntry) / avgEntry) * 100;
+  if (t.stopHit && !t.tp1Hit && !t.tp2Hit) return ((t.stop - avgEntry) / avgEntry) * 100;
+
+  return null;
 }
 
 function renderHistoryStats(items) {
@@ -967,7 +982,8 @@ const items = getFilteredHistoryItems(allItems);
 
       <div class="analysis-levels">
         <div class="metric-box"><span>الدخول 1</span><strong>${fmtPrice(t.entry1)}</strong></div>
-        <div class="metric-box"><span>الدخول 2</span><strong>${fmtPrice(t.entry2)}</strong></div>
+<div class="metric-box"><span>الدخول 2</span><strong>${fmtPrice(t.entry2)}</strong></div>
+<div class="metric-box"><span>متوسط الدخول</span><strong>${getAverageEntry(t) ? fmtPrice(getAverageEntry(t)) : "-"}</strong></div>
         <div class="metric-box"><span>الستوب</span><strong>${fmtPrice(t.stop)}</strong></div>
         <div class="metric-box"><span>الهدف 1</span><strong>${fmtPrice(t.tp1)}</strong></div>
         <div class="metric-box"><span>الهدف 2</span><strong>${fmtPrice(t.tp2)}</strong></div>
