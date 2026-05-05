@@ -218,14 +218,22 @@ function fmtPrice(v){
 function fmtDateTime(ts){
   if (!ts) return "-";
 
-  return new Date(ts).toLocaleString("ar-JO", {
+  const d = new Date(ts);
+
+  const date = d.toLocaleDateString("en-US", {
     year: "numeric",
     month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: false
+    day: "2-digit"
   });
+
+  let hours = d.getHours();
+  const minutes = String(d.getMinutes()).padStart(2, "0");
+  const suffix = hours >= 12 ? "م" : "ص";
+
+  hours = hours % 12;
+  if (hours === 0) hours = 12;
+
+  return `${date} - ${hours}:${minutes} ${suffix}`;
 }
 
 function getFilteredHistoryItems(items){
@@ -695,27 +703,65 @@ function getTradeStatusByPrice(trade, price) {
   return { status, entry1Hit, entry2Hit, tp1Hit, tp2Hit, stopHit };
 }
 
+  function isTradeLocked(t) {
+  return Boolean(
+    t.entry1Hit ||
+    t.entry2Hit ||
+    t.tp1Hit ||
+    t.tp2Hit ||
+    t.stopHit ||
+    t.locked
+  );
+}
+  
 function saveAnalysisTradesToHistory(coins) {
   const history = getHistory();
 
   coins.slice(0, 8).forEach(c => {
     const setup = tradeSetup(c);
-    const id = `${c.symbol}-${setup.entry1.toFixed(8)}-${setup.stop.toFixed(8)}`;
 
-    const exists = history.some(t => t.id === id);
-    const activeSameSymbol = history.some(t =>
+    const sameSymbolIndex = history.findIndex(t =>
       t.symbol === c.symbol &&
-      !["حقق الهدف الثاني", "ضرب الستوب", "ضرب ستوب ثم صعد"].includes(t.status)
+      !t.tp1Hit &&
+      !t.tp2Hit &&
+      !t.stopHit
     );
 
-    if (exists || activeSameSymbol) return;
+    if (sameSymbolIndex !== -1) {
+      const old = history[sameSymbolIndex];
+
+      // قبل الدخول: خليها تتحدث حسب أفضل setup جديد
+      if (!isTradeLocked(old)) {
+        history[sameSymbolIndex] = {
+          ...old,
+          id: `${c.symbol}-${setup.entry1.toFixed(8)}-${setup.stop.toFixed(8)}`,
+          sector: c.sector,
+          signal: c.tech?.signal || "فرصة جيدة",
+          reasons: reasonsFor(c),
+          rsi: c.tech?.rsi || "-",
+          entry1: setup.entry1,
+          entry2: setup.entry2,
+          stop: setup.stop,
+          tp1: setup.tp1,
+          tp2: setup.tp2,
+          status: setup.status,
+          startPrice: c.price,
+          lastPrice: c.price,
+          updatedAt: Date.now(),
+          locked: false
+        };
+      }
+
+      return;
+    }
 
     history.push({
-      id,
+      id: `${c.symbol}-${setup.entry1.toFixed(8)}-${setup.stop.toFixed(8)}`,
       symbol: c.symbol,
       baseAsset: c.baseAsset,
       sector: c.sector,
       createdAt: Date.now(),
+      updatedAt: Date.now(),
       signal: c.tech?.signal || "فرصة جيدة",
       reasons: reasonsFor(c),
       rsi: c.tech?.rsi || "-",
@@ -729,6 +775,7 @@ function saveAnalysisTradesToHistory(coins) {
       tp1Hit: false,
       tp2Hit: false,
       stopHit: false,
+      locked: c.price <= setup.entry1,
       status: setup.status,
       startPrice: c.price,
       lastPrice: c.price
@@ -853,16 +900,17 @@ async function updateHistoryStatus() {
       else status = "انتظار الدخول";
 
       return {
-        ...t,
-        entry1Hit,
-        entry2Hit,
-        tp1Hit,
-        tp2Hit,
-        stopHit,
-        status,
-        lastPrice: currentPrice,
-        updatedAt: Date.now()
-      };
+  ...t,
+  entry1Hit,
+  entry2Hit,
+  tp1Hit,
+  tp2Hit,
+  stopHit,
+  locked: entry1Hit || entry2Hit || tp1Hit || tp2Hit || stopHit,
+  status,
+  lastPrice: currentPrice,
+  updatedAt: Date.now()
+};
 
     } catch (e) {
       return t;
@@ -990,6 +1038,12 @@ const items = getFilteredHistoryItems(allItems);
         <div class="metric-box"><span>آخر سعر</span><strong>${fmtPrice(t.lastPrice)}</strong></div>
 <div class="metric-box"><span>نزلت</span><strong>${fmtDateTime(t.createdAt)}</strong></div>
 <div class="metric-box"><span>آخر تحديث</span><strong>${fmtDateTime(t.updatedAt)}</strong></div>
+<div class="metric-box">
+  <span>وضع الصفقة</span>
+  <strong class="${isTradeLocked(t) ? "green" : ""}">
+    ${isTradeLocked(t) ? "مثبتة" : "متغيرة قبل الدخول"}
+  </strong>
+</div>
        ${getTradePnl(t) !== null ? `
   <div class="metric-box">
     <span>النتيجة</span>
