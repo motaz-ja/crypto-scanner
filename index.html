@@ -220,11 +220,8 @@ function fmtDateTime(ts){
 
   const d = new Date(ts);
 
-  const date = d.toLocaleDateString("en-US", {
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit"
-  });
+  const day = String(d.getDate()).padStart(2, "0");
+  const month = String(d.getMonth() + 1).padStart(2, "0");
 
   let hours = d.getHours();
   const minutes = String(d.getMinutes()).padStart(2, "0");
@@ -233,9 +230,24 @@ function fmtDateTime(ts){
   hours = hours % 12;
   if (hours === 0) hours = 12;
 
-  return `${date} - ${hours}:${minutes} ${suffix}`;
+  return `${day}/${month} - ${hours}:${minutes} ${suffix}`;
 }
 
+  function fmtTimeOnly(ts){
+  if (!ts) return "-";
+
+  const d = new Date(ts);
+
+  let hours = d.getHours();
+  const minutes = String(d.getMinutes()).padStart(2, "0");
+  const suffix = hours >= 12 ? "م" : "ص";
+
+  hours = hours % 12;
+  if (hours === 0) hours = 12;
+
+  return `${hours}:${minutes} ${suffix}`;
+}
+  
 function getFilteredHistoryItems(items){
   const filter = state.historyFilter || "all";
 
@@ -1036,12 +1048,11 @@ const items = getFilteredHistoryItems(allItems);
         <div class="metric-box"><span>الهدف 1</span><strong>${fmtPrice(t.tp1)}</strong></div>
         <div class="metric-box"><span>الهدف 2</span><strong>${fmtPrice(t.tp2)}</strong></div>
         <div class="metric-box"><span>آخر سعر</span><strong>${fmtPrice(t.lastPrice)}</strong></div>
-<div class="metric-box"><span>نزلت</span><strong>${fmtDateTime(t.createdAt)}</strong></div>
-<div class="metric-box"><span>آخر تحديث</span><strong>${fmtDateTime(t.updatedAt)}</strong></div>
 <div class="metric-box">
-  <span>وضع الصفقة</span>
-  <strong class="${isTradeLocked(t) ? "green" : ""}">
-    ${isTradeLocked(t) ? "مثبتة" : "متغيرة قبل الدخول"}
+  <span>التوقيت</span>
+  <strong>
+    نزلت: ${fmtDateTime(t.createdAt)}<br>
+    تحديث: ${fmtTimeOnly(t.updatedAt)}
   </strong>
 </div>
        ${getTradePnl(t) !== null ? `
