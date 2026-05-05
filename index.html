@@ -114,8 +114,16 @@
   <div id="analysisGrid" class="cards"></div>
   </div>
       
-  <div id="historySub" class="sub-panel">
+ <div id="historySub" class="sub-panel">
   <div id="historyStats" class="history-stats"></div>
+
+  <div class="history-filters">
+    <button class="history-filter active" data-history-filter="all">الكل</button>
+    <button class="history-filter" data-history-filter="live">الشغالة</button>
+    <button class="history-filter" data-history-filter="targets">الأهداف</button>
+    <button class="history-filter" data-history-filter="stops">الستوبات</button>
+  </div>
+
   <div id="historyGrid" class="cards"></div>
 </div>
     </section>
@@ -172,7 +180,8 @@ let state = {
   whales: [],
   limit: 30,
   sort: "liquidity",
-  search: ""
+  search: "",
+  historyFilter: "all"
 };
 
 const HISTORY_KEY = "cryptoScannerHistoryV1";
@@ -205,6 +214,61 @@ function fmtPrice(v){
   if (v < 100) return "$" + v.toFixed(3);
   return "$" + v.toFixed(2);
 }
+
+  function fmtPrice(v){
+  v = n(v);
+  if (v <= 0) return "-";
+  if (v < 0.001) return "$" + v.toFixed(8);
+  if (v < 0.1) return "$" + v.toFixed(5);
+  if (v < 1) return "$" + v.toFixed(4);
+  if (v < 100) return "$" + v.toFixed(3);
+  return "$" + v.toFixed(2);
+}
+
+function fmtDateTime(ts){
+  if (!ts) return "-";
+
+  return new Date(ts).toLocaleString("ar-JO", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false
+  });
+}
+
+function getFilteredHistoryItems(items){
+  const filter = state.historyFilter || "all";
+
+  if (filter === "live") {
+    return items.filter(t =>
+      t.status.includes("داخل") ||
+      t.status.includes("انتظار") ||
+      t.status.includes("شغالة")
+    );
+  }
+
+  if (filter === "targets") {
+    return items.filter(t =>
+      t.tp1Hit ||
+      t.tp2Hit ||
+      t.status.includes("هدف") ||
+      t.status.includes("حقق الهدف")
+    );
+  }
+
+  if (filter === "stops") {
+    return items.filter(t =>
+      t.stopHit ||
+      t.status.includes("ستوب")
+    );
+  }
+
+  return items;
+}
+
+function getSectors(asset){
 
 function getSectors(asset){
   const found = [];
@@ -829,16 +893,43 @@ function historyStatusClass(status) {
 
 function renderHistoryStats(items) {
   const total = items.length;
-  const wins = items.filter(t => t.tp1Hit || t.tp2Hit).length;
-  const losses = items.filter(t => t.stopHit && !t.tp1Hit && !t.tp2Hit).length;
-  const live = items.filter(t => t.status.includes("داخل") || t.status.includes("انتظار")).length;
-  const tp1 = items.filter(t => t.tp1Hit).length;
-  const tp2 = items.filter(t => t.tp2Hit).length;
 
-  const winRate = total ? ((wins / total) * 100).toFixed(1) : "0.0";
+  const wins = items.filter(t =>
+    t.tp1Hit ||
+    t.tp2Hit ||
+    t.status.includes("هدف") ||
+    t.status.includes("حقق الهدف")
+  ).length;
+
+  const losses = items.filter(t =>
+    t.stopHit ||
+    t.status.includes("ستوب")
+  ).length;
+
+  const live = items.filter(t =>
+    t.status.includes("داخل") ||
+    t.status.includes("انتظار") ||
+    t.status.includes("شغالة")
+  ).length;
+
+  const tp1 = items.filter(t => t.tp1Hit || t.status.includes("هدف 1") || t.status.includes("الهدف الأول")).length;
+  const tp2 = items.filter(t => t.tp2Hit || t.status.includes("هدف 2") || t.status.includes("الهدف الثاني")).length;
+
   const closedTrades = items.filter(t => getTradePnl(t) !== null);
-const totalPnl = closedTrades.reduce((sum, t) => sum + getTradePnl(t), 0);
-  
+
+  const profitPnl = closedTrades
+    .map(t => getTradePnl(t))
+    .filter(p => p > 0)
+    .reduce((sum, p) => sum + p, 0);
+
+  const lossPnl = closedTrades
+    .map(t => getTradePnl(t))
+    .filter(p => p < 0)
+    .reduce((sum, p) => sum + p, 0);
+
+  const totalPnl = profitPnl + lossPnl;
+  const winRate = closedTrades.length ? ((wins / closedTrades.length) * 100).toFixed(1) : "0.0";
+
   const box = document.getElementById("historyStats");
   if (!box) return;
 
@@ -849,13 +940,17 @@ const totalPnl = closedTrades.reduce((sum, t) => sum + getTradePnl(t), 0);
     <div><span>Stop</span><strong class="red">${losses}</strong></div>
     <div><span>الشغالة</span><strong>${live}</strong></div>
     <div><span>Win Rate</span><strong>${winRate}%</strong></div>
+    <div><span>Total Profit</span><strong class="green">+${profitPnl.toFixed(2)}%</strong></div>
+    <div><span>Total Loss</span><strong class="red">${lossPnl.toFixed(2)}%</strong></div>
     <div><span>Total PnL</span><strong class="${totalPnl >= 0 ? "green" : "red"}">${totalPnl.toFixed(2)}%</strong></div>
   `;
 }
   
  async function renderHistory() {
- const items = await updateHistoryStatusFromCandles();
-renderHistoryStats(items);
+ const allItems = await updateHistoryStatusFromCandles();
+renderHistoryStats(allItems);
+
+const items = getFilteredHistoryItems(allItems);
   
   if (!items.length) {
     els.historyGrid.innerHTML = `<div class="loading-box">لا توجد صفقات محفوظة آخر 7 أيام.</div>`;
@@ -881,6 +976,8 @@ renderHistoryStats(items);
         <div class="metric-box"><span>الهدف 1</span><strong>${fmtPrice(t.tp1)}</strong></div>
         <div class="metric-box"><span>الهدف 2</span><strong>${fmtPrice(t.tp2)}</strong></div>
         <div class="metric-box"><span>آخر سعر</span><strong>${fmtPrice(t.lastPrice)}</strong></div>
+<div class="metric-box"><span>نزلت</span><strong>${fmtDateTime(t.createdAt)}</strong></div>
+<div class="metric-box"><span>آخر تحديث</span><strong>${fmtDateTime(t.updatedAt)}</strong></div>
        ${getTradePnl(t) !== null ? `
   <div class="metric-box">
     <span>النتيجة</span>
@@ -1117,6 +1214,16 @@ els.searchInput.addEventListener("input", e=>{
 document.getElementById("refreshBtn").addEventListener("click", fetchTicker);
 document.getElementById("loadWhalesBtn").addEventListener("click", loadWhales);
 
+  document.querySelectorAll(".history-filter").forEach(btn => {
+  btn.addEventListener("click", () => {
+    document.querySelectorAll(".history-filter").forEach(b => b.classList.remove("active"));
+    btn.classList.add("active");
+
+    state.historyFilter = btn.dataset.historyFilter || "all";
+    renderHistory();
+  });
+});
+  
 fetchTicker();
 </script>
 </body>
