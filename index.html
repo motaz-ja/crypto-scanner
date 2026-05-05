@@ -433,11 +433,58 @@ function renderSectors(){
 }
 
 async function fetchKlines(symbol){
-  const url = `${KLINES_URL}?symbol=${symbol}&interval=4h&limit=80`;
+  const url = `${KLINES_URL}?symbol=${symbol}&interval=4h&limit=120`;
   const r = await fetch(url);
   return await r.json();
 }
 
+function calcEMA(values, period) {
+  if (!values || values.length < period) return null;
+
+  const k = 2 / (period + 1);
+  let ema = values.slice(0, period).reduce((sum, v) => sum + Number(v), 0) / period;
+
+  for (let i = period; i < values.length; i++) {
+    ema = Number(values[i]) * k + ema * (1 - k);
+  }
+
+  return ema;
+}
+
+function detectBullishCross(values, fastPeriod = 8, slowPeriod = 21, lookback = 3) {
+  if (!values || values.length < slowPeriod + lookback + 2) return false;
+
+  const recent = values.slice(-(slowPeriod + lookback + 10));
+  const fastSeries = [];
+  const slowSeries = [];
+
+  for (let i = slowPeriod; i <= recent.length; i++) {
+    const slice = recent.slice(0, i);
+    fastSeries.push(calcEMA(slice, fastPeriod));
+    slowSeries.push(calcEMA(slice, slowPeriod));
+  }
+
+  for (let i = Math.max(1, fastSeries.length - lookback); i < fastSeries.length; i++) {
+    const prevFast = fastSeries[i - 1];
+    const prevSlow = slowSeries[i - 1];
+    const nowFast = fastSeries[i];
+    const nowSlow = slowSeries[i];
+
+    if (
+      prevFast !== null &&
+      prevSlow !== null &&
+      nowFast !== null &&
+      nowSlow !== null &&
+      prevFast <= prevSlow &&
+      nowFast > nowSlow
+    ) {
+      return true;
+    }
+  }
+
+  return false;
+}
+  
 function calcRSI(closes, period=14){
   if (!closes || closes.length < period+2) return null;
   let gains=0, losses=0;
@@ -457,9 +504,24 @@ function analyzeKlines(coin, klines){
   })) : [];
 
   const closes = candles.map(c=>c.close);
-  const rsi = calcRSI(closes);
-  const last = candles[candles.length-1];
-  const prev = candles.slice(-20, -1);
+const rsi = calcRSI(closes);
+
+const ema8 = calcEMA(closes, 8);
+const ema21 = calcEMA(closes, 21);
+const ema20 = calcEMA(closes, 20);
+const ema50 = calcEMA(closes, 50);
+
+const bullishCross821 = detectBullishCross(closes, 8, 21, 3);
+
+const last = candles[candles.length-1];
+const prev = candles.slice(-20, -1);
+
+const emaFastBullish = ema8 && ema21 ? ema8 > ema21 : false;
+const emaTrendBullish = ema20 && ema50 ? ema20 > ema50 : false;
+
+const priceAboveEma8 = last && ema8 ? last.close > ema8 : false;
+const priceAboveEma20 = last && ema20 ? last.close > ema20 : false;
+const priceAboveEma50 = last && ema50 ? last.close > ema50 : false;
 
   const recentHigh = prev.length ? Math.max(...prev.map(c=>c.high)) : coin.price * 1.04;
   const recentLow = prev.length ? Math.min(...prev.map(c=>c.low)) : coin.price * 0.96;
@@ -480,17 +542,30 @@ function analyzeKlines(coin, klines){
     1, 100
   );
 
-  return {
-    rsi: rsi ? Number(rsi.toFixed(1)) : null,
-    recentHigh,
-    recentLow,
-    volBoost,
-    breakout,
-    reversal,
-    signal,
-    liquidityScore: Math.round(liquidityScore),
-    signalScore: Math.round(signalScore)
-  };
+ return {
+  rsi: rsi ? Number(rsi.toFixed(1)) : null,
+
+  ema8: ema8 ? Number(ema8.toFixed(8)) : null,
+  ema21: ema21 ? Number(ema21.toFixed(8)) : null,
+  ema20: ema20 ? Number(ema20.toFixed(8)) : null,
+  ema50: ema50 ? Number(ema50.toFixed(8)) : null,
+
+  bullishCross821,
+  emaFastBullish,
+  emaTrendBullish,
+  priceAboveEma8,
+  priceAboveEma20,
+  priceAboveEma50,
+
+  recentHigh,
+  recentLow,
+  volBoost,
+  breakout,
+  reversal,
+  signal,
+  liquidityScore: Math.round(liquidityScore),
+  signalScore: Math.round(signalScore)
+};
 }
 
 async function loadOpportunities(){
@@ -536,6 +611,10 @@ function reasonsFor(c){
   if (c.change > 5) r.push("زخم صاعد واضح");
   if (c.tech?.volBoost > 1.3) r.push("ارتفاع في حجم التداول");
   if (c.sector !== "General") r.push("القطاع يدعم الحركة");
+  if (c.tech?.bullishCross821) r.push("تقاطع صاعد EMA 8/21");
+if (c.tech?.emaFastBullish) r.push("EMA 8 فوق EMA 21 والزخم إيجابي");
+if (c.tech?.emaTrendBullish) r.push("EMA 20 فوق EMA 50 يدعم الترند");
+if (c.tech?.priceAboveEma8) r.push("السعر فوق EMA 8");
   return r.length ? r.slice(0,4) : ["فرصة مضاربية تحت المراقبة"];
 }
 
@@ -1125,13 +1204,21 @@ function renderOpportunities(){
       (c.volume > 10000000 ? 2 : c.volume > 5000000 ? 1 : 0) +
       (c.trades > 60000 ? 2 : c.trades > 30000 ? 1 : 0);
 
-    const setupScore =
-      (c.tech?.reversal ? 2 : 0) +
-      (c.tech?.breakout ? 1 : 0) +
-      (c.tech?.rsi && c.tech.rsi < 45 ? 1 : 0) +
-      (distanceToEntry <= 2.5 ? 2 : distanceToEntry <= 5 ? 1 : 0) +
-      (rr >= 1.4 ? 2 : rr >= 1.15 ? 1 : 0) +
-      (c.change < 10 ? 1 : 0);
+   const emaBonus =
+  (c.tech?.bullishCross821 ? 2 : 0) +
+  (c.tech?.emaFastBullish ? 1 : 0) +
+  (c.tech?.emaTrendBullish ? 1 : 0) +
+  (c.tech?.priceAboveEma8 ? 1 : 0) +
+  (c.tech?.priceAboveEma20 ? 1 : 0);
+
+const setupScore =
+  (c.tech?.reversal ? 2 : 0) +
+  (c.tech?.breakout ? 1 : 0) +
+  (c.tech?.rsi && c.tech.rsi < 45 ? 1 : 0) +
+  (distanceToEntry <= 2.5 ? 2 : distanceToEntry <= 5 ? 1 : 0) +
+  (rr >= 1.4 ? 2 : rr >= 1.15 ? 1 : 0) +
+  (c.change < 10 ? 1 : 0) +
+  emaBonus;
 
     return {
       ...c,
