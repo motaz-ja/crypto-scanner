@@ -690,25 +690,6 @@ function tradeSetup(c){
   return {entry1, entry2, stop, tp1, tp2, status};
 }
 
-function emaSummary(c) {
-  const items = [];
-
-  if (c.tech?.bullishCross821) {
-    items.push(`<span class="ema-badge good">تقاطع EMA ✅</span>`);
-  } else {
-    items.push(`<span class="ema-badge neutral">لا يوجد تقاطع EMA</span>`);
-  }
-
-  if (c.tech?.priceAboveEma21) {
-    items.push(`<span class="ema-badge good">فوق EMA 21 يدعم الزخم ✅</span>`);
-  }
-
-  if (c.tech?.priceAboveEma50) {
-    items.push(`<span class="ema-badge good">فوق EMA 50 يدعم الصعود ✅</span>`);
-  }
-
-  return items.join("");
-}
   
 function buildAnalysisCard(c, i){
   const s = tradeSetup(c);
@@ -724,10 +705,6 @@ function buildAnalysisCard(c, i){
       <div class="analysis-status-row">
   <span class="signal-pill">${c.tech?.signal || "فرصة جيدة"}</span>
   <span class="signal-pill">${s.status}</span>
-</div>
-
-<div class="ema-line">
-  ${emaSummary(c)}
 </div>
 
       <div class="analysis-levels">
