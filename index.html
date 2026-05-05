@@ -508,7 +508,6 @@ const rsi = calcRSI(closes);
 
 const ema8 = calcEMA(closes, 8);
 const ema21 = calcEMA(closes, 21);
-const ema20 = calcEMA(closes, 20);
 const ema50 = calcEMA(closes, 50);
 
 const bullishCross821 = detectBullishCross(closes, 8, 21, 3);
@@ -517,10 +516,9 @@ const last = candles[candles.length-1];
 const prev = candles.slice(-20, -1);
 
 const emaFastBullish = ema8 && ema21 ? ema8 > ema21 : false;
-const emaTrendBullish = ema20 && ema50 ? ema20 > ema50 : false;
 
 const priceAboveEma8 = last && ema8 ? last.close > ema8 : false;
-const priceAboveEma20 = last && ema20 ? last.close > ema20 : false;
+const priceAboveEma21 = last && ema21 ? last.close > ema21 : false;
 const priceAboveEma50 = last && ema50 ? last.close > ema50 : false;
 
   const recentHigh = prev.length ? Math.max(...prev.map(c=>c.high)) : coin.price * 1.04;
@@ -546,16 +544,14 @@ const priceAboveEma50 = last && ema50 ? last.close > ema50 : false;
   rsi: rsi ? Number(rsi.toFixed(1)) : null,
 
   ema8: ema8 ? Number(ema8.toFixed(8)) : null,
-  ema21: ema21 ? Number(ema21.toFixed(8)) : null,
-  ema20: ema20 ? Number(ema20.toFixed(8)) : null,
-  ema50: ema50 ? Number(ema50.toFixed(8)) : null,
+ema21: ema21 ? Number(ema21.toFixed(8)) : null,
+ema50: ema50 ? Number(ema50.toFixed(8)) : null,
 
-  bullishCross821,
-  emaFastBullish,
-  emaTrendBullish,
-  priceAboveEma8,
-  priceAboveEma20,
-  priceAboveEma50,
+bullishCross821,
+emaFastBullish,
+priceAboveEma8,
+priceAboveEma21,
+priceAboveEma50,
 
   recentHigh,
   recentLow,
@@ -611,10 +607,11 @@ function reasonsFor(c){
   if (c.change > 5) r.push("زخم صاعد واضح");
   if (c.tech?.volBoost > 1.3) r.push("ارتفاع في حجم التداول");
   if (c.sector !== "General") r.push("القطاع يدعم الحركة");
-  if (c.tech?.bullishCross821) r.push("تقاطع صاعد EMA 8/21");
-if (c.tech?.emaFastBullish) r.push("EMA 8 فوق EMA 21 والزخم إيجابي");
-if (c.tech?.emaTrendBullish) r.push("EMA 20 فوق EMA 50 يدعم الترند");
-if (c.tech?.priceAboveEma8) r.push("السعر فوق EMA 8");
+
+  if (c.tech?.bullishCross821) r.push("تقاطع EMA صاعد");
+  if (c.tech?.priceAboveEma21) r.push("فوق EMA 21 يدعم الزخم");
+  if (c.tech?.priceAboveEma50) r.push("فوق EMA 50 يدعم الصعود");
+
   return r.length ? r.slice(0,4) : ["فرصة مضاربية تحت المراقبة"];
 }
 
@@ -693,6 +690,26 @@ function tradeSetup(c){
   return {entry1, entry2, stop, tp1, tp2, status};
 }
 
+function emaSummary(c) {
+  const items = [];
+
+  if (c.tech?.bullishCross821) {
+    items.push(`<span class="ema-badge good">تقاطع EMA ✅</span>`);
+  } else {
+    items.push(`<span class="ema-badge neutral">لا يوجد تقاطع EMA</span>`);
+  }
+
+  if (c.tech?.priceAboveEma21) {
+    items.push(`<span class="ema-badge good">فوق EMA 21 يدعم الزخم ✅</span>`);
+  }
+
+  if (c.tech?.priceAboveEma50) {
+    items.push(`<span class="ema-badge good">فوق EMA 50 يدعم الصعود ✅</span>`);
+  }
+
+  return items.join("");
+}
+  
 function buildAnalysisCard(c, i){
   const s = tradeSetup(c);
   const rsi = c.tech?.rsi ? c.tech.rsi : "-";
@@ -705,9 +722,13 @@ function buildAnalysisCard(c, i){
       </div>
 
       <div class="analysis-status-row">
-        <span class="signal-pill">${c.tech?.signal || "فرصة جيدة"}</span>
-        <span class="signal-pill">${s.status}</span>
-      </div>
+  <span class="signal-pill">${c.tech?.signal || "فرصة جيدة"}</span>
+  <span class="signal-pill">${s.status}</span>
+</div>
+
+<div class="ema-line">
+  ${emaSummary(c)}
+</div>
 
       <div class="analysis-levels">
         <div class="metric-box"><span>الدخول 1</span><strong>${fmtPrice(s.entry1)}</strong></div>
@@ -1204,12 +1225,10 @@ function renderOpportunities(){
       (c.volume > 10000000 ? 2 : c.volume > 5000000 ? 1 : 0) +
       (c.trades > 60000 ? 2 : c.trades > 30000 ? 1 : 0);
 
-   const emaBonus =
+const emaBonus =
   (c.tech?.bullishCross821 ? 2 : 0) +
-  (c.tech?.emaFastBullish ? 1 : 0) +
-  (c.tech?.emaTrendBullish ? 1 : 0) +
-  (c.tech?.priceAboveEma8 ? 1 : 0) +
-  (c.tech?.priceAboveEma20 ? 1 : 0);
+  (c.tech?.priceAboveEma21 ? 1 : 0) +
+  (c.tech?.priceAboveEma50 ? 1 : 0);
 
 const setupScore =
   (c.tech?.reversal ? 2 : 0) +
