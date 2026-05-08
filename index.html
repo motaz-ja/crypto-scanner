@@ -952,35 +952,54 @@ async function updateHistoryStatus() {
       let stopHit = t.stopHit || false;
       let status = t.status || "انتظار الدخول";
 
-      candles.forEach(k => {
+      let entry1At = t.entry1At || null;
+      let entry2At = t.entry2At || null;
+
+      for (const k of candles) {
+        const candleTime = Number(k[0]);
         const high = Number(k[2]);
         const low = Number(k[3]);
         const close = Number(k[4]);
+
         currentPrice = close || currentPrice;
 
-        if (!entry1Hit && low <= t.entry1) entry1Hit = true;
-        if (!entry2Hit && low <= t.entry2) entry2Hit = true;
-
-        // الستوب فقط قبل تحقيق أي هدف
-        if (entry1Hit && !tp1Hit && !tp2Hit && !stopHit && low <= t.stop) {
-          stopHit = true;
-          status = "ضرب الستوب";
-          return;
+        // أول لمس للدخول 1
+        if (!entry1Hit && low <= t.entry1) {
+          entry1Hit = true;
+          entry1At = candleTime;
+          status = "داخل الصفقة";
+          continue; // مهم: لا تحسب هدف أو ستوب بنفس شمعة الدخول
         }
 
-        // الهدف الأول يلغي فكرة الخسارة بعده
-        if (entry1Hit && !tp1Hit && high >= t.tp1) {
+        // أول لمس للدخول 2
+        if (entry1Hit && !entry2Hit && low <= t.entry2) {
+          entry2Hit = true;
+          entry2At = candleTime;
+        }
+
+        // قبل الدخول لا تفحص أهداف أو ستوب
+        if (!entry1Hit) continue;
+
+        // لا تحسب TP أو Stop بنفس شمعة الدخول
+        if (entry1At && candleTime <= entry1At) continue;
+
+        // الستوب فقط قبل أي هدف
+        if (!tp1Hit && !tp2Hit && !stopHit && low <= t.stop) {
+          stopHit = true;
+          status = "ضرب الستوب";
+          break;
+        }
+
+        if (!tp1Hit && high >= t.tp1) {
           tp1Hit = true;
-          stopHit = false;
           status = "حقق الهدف الأول";
         }
 
-        if (entry1Hit && !tp2Hit && high >= t.tp2) {
+        if (!tp2Hit && high >= t.tp2) {
           tp2Hit = true;
-          stopHit = false;
           status = "حقق الهدف الثاني";
         }
-      });
+      }
 
       if (tp2Hit) status = "حقق الهدف الثاني";
       else if (tp1Hit) status = "حقق الهدف الأول";
@@ -989,17 +1008,19 @@ async function updateHistoryStatus() {
       else status = "انتظار الدخول";
 
       return {
-  ...t,
-  entry1Hit,
-  entry2Hit,
-  tp1Hit,
-  tp2Hit,
-  stopHit,
-  locked: entry1Hit || entry2Hit || tp1Hit || tp2Hit || stopHit,
-  status,
-  lastPrice: currentPrice,
-  updatedAt: Date.now()
-};
+        ...t,
+        entry1Hit,
+        entry2Hit,
+        entry1At,
+        entry2At,
+        tp1Hit,
+        tp2Hit,
+        stopHit,
+        locked: entry1Hit || entry2Hit || tp1Hit || tp2Hit || stopHit,
+        status,
+        lastPrice: currentPrice,
+        updatedAt: Date.now()
+      };
 
     } catch (e) {
       return t;
