@@ -184,7 +184,7 @@ let state = {
   historyFilter: "all"
 };
 
-const HISTORY_KEY = "cryptoScannerHistoryV1";
+const HISTORY_KEY = "cryptoScannerHistoryV2";
 const HISTORY_DAYS = 7;
 
 function n(v){ return Number(v || 0); }
@@ -246,6 +246,18 @@ function fmtDateTime(ts){
   if (hours === 0) hours = 12;
 
   return `${hours}:${minutes} ${suffix}`;
+}
+
+function executionTimeText(t) {
+  const rows = [];
+
+  if (t.entry1At) rows.push(`دخول 1: ${fmtTimeOnly(t.entry1At)}`);
+  if (t.entry2At) rows.push(`دخول 2: ${fmtTimeOnly(t.entry2At)}`);
+  if (t.tp1At) rows.push(`TP1: ${fmtTimeOnly(t.tp1At)}`);
+  if (t.tp2At) rows.push(`TP2: ${fmtTimeOnly(t.tp2At)}`);
+  if (t.stopAt) rows.push(`Stop: ${fmtTimeOnly(t.stopAt)}`);
+
+  return rows.length ? rows.join("<br>") : "-";
 }
   
 function getFilteredHistoryItems(items){
@@ -934,7 +946,7 @@ async function updateHistoryStatus() {
   return history;
 }
 
- async function updateHistoryStatusFromCandles() {
+async function updateHistoryStatusFromCandles() {
   const history = getHistory();
 
   const updated = await Promise.all(history.map(async (t) => {
@@ -954,6 +966,9 @@ async function updateHistoryStatus() {
 
       let entry1At = t.entry1At || null;
       let entry2At = t.entry2At || null;
+      let tp1At = t.tp1At || null;
+      let tp2At = t.tp2At || null;
+      let stopAt = t.stopAt || null;
 
       for (const k of candles) {
         const candleTime = Number(k[0]);
@@ -963,41 +978,50 @@ async function updateHistoryStatus() {
 
         currentPrice = close || currentPrice;
 
-        // أول لمس للدخول 1
+        // لو الصفقة خلصانة، ما نغيرها
+        if (tp2Hit || stopHit) break;
+
+        // دخول 1
         if (!entry1Hit && low <= t.entry1) {
           entry1Hit = true;
           entry1At = candleTime;
           status = "داخل الصفقة";
-          continue; // مهم: لا تحسب هدف أو ستوب بنفس شمعة الدخول
+          continue; // لا تحسب هدف أو ستوب بنفس شمعة الدخول
         }
 
-        // أول لمس للدخول 2
-        if (entry1Hit && !entry2Hit && low <= t.entry2) {
+        // قبل دخول 1 لا تفحص أهداف ولا ستوب
+        if (!entry1Hit) continue;
+
+        // لا تحسب هدف أو ستوب بنفس شمعة دخول 1
+        if (entry1At && candleTime <= entry1At) continue;
+
+        // دخول 2
+        if (!entry2Hit && low <= t.entry2) {
           entry2Hit = true;
           entry2At = candleTime;
         }
 
-        // قبل الدخول لا تفحص أهداف أو ستوب
-        if (!entry1Hit) continue;
-
-        // لا تحسب TP أو Stop بنفس شمعة الدخول
-        if (entry1At && candleTime <= entry1At) continue;
-
         // الستوب فقط قبل أي هدف
-        if (!tp1Hit && !tp2Hit && !stopHit && low <= t.stop) {
+        if (!tp1Hit && !tp2Hit && low <= t.stop) {
           stopHit = true;
+          stopAt = candleTime;
           status = "ضرب الستوب";
           break;
         }
 
+        // الهدف الأول
         if (!tp1Hit && high >= t.tp1) {
           tp1Hit = true;
+          tp1At = candleTime;
           status = "حقق الهدف الأول";
         }
 
+        // الهدف الثاني
         if (!tp2Hit && high >= t.tp2) {
           tp2Hit = true;
+          tp2At = candleTime;
           status = "حقق الهدف الثاني";
+          break;
         }
       }
 
@@ -1011,11 +1035,16 @@ async function updateHistoryStatus() {
         ...t,
         entry1Hit,
         entry2Hit,
-        entry1At,
-        entry2At,
         tp1Hit,
         tp2Hit,
         stopHit,
+
+        entry1At,
+        entry2At,
+        tp1At,
+        tp2At,
+        stopAt,
+
         locked: entry1Hit || entry2Hit || tp1Hit || tp2Hit || stopHit,
         status,
         lastPrice: currentPrice,
@@ -1152,6 +1181,11 @@ const items = getFilteredHistoryItems(allItems);
     نزلت: ${fmtDateTime(t.createdAt)}<br>
     تحديث: ${fmtTimeOnly(t.updatedAt)}
   </strong>
+</div>
+
+<div class="metric-box">
+  <span>تنفيذ الصفقة</span>
+  <strong>${executionTimeText(t)}</strong>
 </div>
        ${getTradePnl(t) !== null ? `
   <div class="metric-box">
